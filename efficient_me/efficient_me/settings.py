@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'efficient_me_api.apps.apps.EfficientMeApiConfig',
+    'efficient_me_api.apps.EfficientMeApiConfig',
     'rest_framework',
 ]
 

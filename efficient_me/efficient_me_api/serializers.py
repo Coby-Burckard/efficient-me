@@ -1,5 +1,6 @@
 from .models import ActivityType, Activity, Goal, TimeAllocation
 from rest_framework import serializers
+from django.contrib.auth.models import User
 
 class ActivityTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,3 +22,9 @@ class TimeAllocationSerializer(serializers.ModelSerializer):
         model = TimeAllocation
         fields = ['created', 'title', 'description', 'date_completed', 'time_speant', 'description', 'goal']
 
+class UserSerializer(serializers.ModelSerializer):
+    actitivies = serializers.PrimaryKeyRelatedField(many=True, queryset=Activity.objects.all())
+
+    class Meta:
+        model = User
+        fields = ['id, username, activities']

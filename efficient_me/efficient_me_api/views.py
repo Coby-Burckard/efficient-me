@@ -3,11 +3,19 @@ from .serializers import ActivitySerializer, GoalSerializer, TimeAllocationSeria
 from rest_framework import generics, permissions
 from .permissions import IsOwnerOrBackOff
 
+'''
+Notes:
+    Javascript fetch for testing in the frontend
+        const response = await fetch('http://127.0.0.1:8000/activities/', {headers:{'Authorization': 'Basic ' + btoa('admin:admin')}});
+        const myJson = await response.json();
+        console.log(JSON.stringify(myJson));
+'''
+
+
 class RUDActivityType(generics.RetrieveUpdateDestroyAPIView):
     '''
     get or delete an activity
     '''
-
     queryset = ActivityType.objects.all()
     serializer_class = ActivityTypeSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrBackOff]
@@ -16,6 +24,7 @@ class LCActivityType(generics.ListCreateAPIView):
     '''
     create a new activity
     '''
+    
     serializer_class = ActivityTypeSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrBackOff]
 
@@ -23,6 +32,7 @@ class LCActivityType(generics.ListCreateAPIView):
         serializer.save(user = self.request.user)
 
     def get_queryset(self):
+        print(self.request.GET)
         user = self.request.user
         return ActivityType.objects.filter(user=user)
 

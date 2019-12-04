@@ -1,7 +1,10 @@
 from .models import Activity, Goal, TimeAllocation, ActivityType
-from .serializers import ActivitySerializer, GoalSerializer, TimeAllocationSerializer, ActivityTypeSerializer
+from django.contrib.auth.models import User
+from .serializers import ActivitySerializer, GoalSerializer, TimeAllocationSerializer, ActivityTypeSerializer, UserSerializer
 from rest_framework import generics, permissions
 from .permissions import IsOwnerOrBackOff
+from rest_framework.authentication import TokenAuthentication
+
 
 '''
 Notes:
@@ -20,21 +23,23 @@ class RUDActivityType(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ActivityTypeSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrBackOff]
 
+
 class LCActivityType(generics.ListCreateAPIView):
     '''
     create a new activity
     '''
-    
+
     serializer_class = ActivityTypeSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrBackOff]
 
     def perform_create(self, serializer):
-        serializer.save(user = self.request.user)
+        serializer.save(user=self.request.user)
 
     def get_queryset(self):
         print(self.request.GET)
         user = self.request.user
         return ActivityType.objects.filter(user=user)
+
 
 class RUDActivity(generics.RetrieveUpdateDestroyAPIView):
     '''
@@ -45,6 +50,7 @@ class RUDActivity(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ActivitySerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrBackOff]
 
+
 class LCActivity(generics.ListCreateAPIView):
     '''
     create a new activity
@@ -53,11 +59,12 @@ class LCActivity(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrBackOff]
 
     def perform_create(self, serializer):
-        serializer.save(user = self.request.user)
+        serializer.save(user=self.request.user)
 
     def get_queryset(self):
         user = self.request.user
         return Activity.objects.filter(user=user)
+
 
 class RUDGoal(generics.RetrieveUpdateDestroyAPIView):
     '''
@@ -68,6 +75,7 @@ class RUDGoal(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = GoalSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrBackOff]
 
+
 class LCGoal(generics.ListCreateAPIView):
     '''
     create a new activity
@@ -76,11 +84,12 @@ class LCGoal(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrBackOff]
 
     def perform_create(self, serializer):
-        serializer.save(user = self.request.user)
+        serializer.save(user=self.request.user)
 
     def get_queryset(self):
         user = self.request.user
         return Goal.objects.filter(user=user)
+
 
 class RUDTimeAllocation(generics.RetrieveUpdateDestroyAPIView):
     '''
@@ -91,6 +100,7 @@ class RUDTimeAllocation(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TimeAllocationSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrBackOff]
 
+
 class LCTimeAllocation(generics.ListCreateAPIView):
     '''
     create a new activity
@@ -99,8 +109,14 @@ class LCTimeAllocation(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrBackOff]
 
     def perform_create(self, serializer):
-        serializer.save(user = self.request.user)
+        serializer.save(user=self.request.user)
 
     def get_queryset(self):
         user = self.request.user
         return TimeAllocation.objects.filter(user=user)
+
+
+class CUser(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.AllowAny]

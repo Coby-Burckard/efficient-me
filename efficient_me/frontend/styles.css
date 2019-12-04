@@ -30,8 +30,10 @@ h1 {
   margin-right: 2rem;
 }
 
-.log-in-sign-up {
+.log-in-sign-up,
+.log-out {
   font-size: 0.75rem;
+  margin-right: 0.5rem;
 }
 
 /* first body section */

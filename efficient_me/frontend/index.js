@@ -20,7 +20,7 @@ function updatePageHome(){
   parentSection.innerHTML = homeInnerHtml
 }
 
-function updatePagetoUser(){
+async function updatePagetoUser(token){
   //updates index.html to the user page
   this.console.log('updating page to user')
 
@@ -37,24 +37,52 @@ function updatePagetoUser(){
   //updating the body
   const parentSection = document.querySelector('.body-block-1')
   while (parentSection.firstChild) {parentSection.removeChild(parentSection.firstChild)}
-  const userInnerHtml = '<p>tbd</p>'
-  parentSection.innerHTML = userInnerHtml
+  const userActivities = await fetchUserData(token)
+  const activitiesOL = document.createElement('ol')
+  userActivities.forEach(element => {
+    let activityLI = document.createElement('li')
+    activityLI.innerText = element.title
+    activitiesOL.appendChild(activityLI)
+  });
+  parentSection.appendChild(activitiesOL)
 }
 
 function setHTMLOnPageLoad(){
   //runs on page load to set index to the home page or user page
   this.console.log('running setHTMLOnPageLoad')
-  this.console.log(document.cookie.split(';').filter((item) => item.trim().startsWith('token=')))
+  const tokenArray = document.cookie.split(';').filter((item) => item.trim().startsWith('token='))
+  
   //checks for the existence of the token cookie
-  if (document.cookie.split(';').filter((item) => item.trim().startsWith('token=')).length) {
+  if (tokenArray.length) {
+    const token = tokenArray[0].split('=')[1]
     this.console.log('Token exists')
-    updatePagetoUser()
+    updatePagetoUser(token)
   }
   else {
     this.console.log('Token does not exist')
     updatePageHome()
   }
 }
+
+
+
+
+//Functions to fetch user data
+async function fetchUserData(token) {
+  const response = await fetch('http://127.0.0.1:8000/api/activities/', {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Token ${token}`
+    },
+  })
+  const activities = await response.json()
+  console.log(activities)
+  return await activities
+}
+
+
+
 
 // login and log out handeling
 async function getAndCacheToken () {
@@ -64,7 +92,6 @@ async function getAndCacheToken () {
       2. recieves and stores the token in a cookie
       3. calls the page update function with the user's token
   */
-
   const response = await fetch('http://127.0.0.1:8000/api/getToken/', {
     method: "POST",
     headers: {
@@ -73,11 +100,11 @@ async function getAndCacheToken () {
     body: JSON.stringify({
       username: "admin",
       password: "admin",
-    })})
+  })})
   const token = await response.json()
 
   document.cookie = `token=${token.token}`
-  updatePagetoUser()
+  updatePagetoUser(token.token)
 }
 
 function deleteToken() {
@@ -91,6 +118,10 @@ function deleteToken() {
 
   updatePageHome()
 }
+
+
+
+
 
 window.onload = function () {
   this.console.log('loaded page')

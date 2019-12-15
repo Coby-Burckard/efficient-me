@@ -30,6 +30,12 @@ async function updatePagetoUser(token){
   //updates index.html to the user page
   this.console.log('updating page to user')
 
+  //hiding create and log in
+  lgf = document.querySelector('.log-in-form-body')
+  lgf.classList.add('lgf-hidden')
+  cuf = document.querySelector('.create-form-body')
+  cuf.classList.add('create-hidden')
+
   //updating the login/logout button
   const logInOutButton = document.querySelector('.log-in-or-out')
   logInOutButton.classList.remove('log-in-sign-up')
@@ -147,7 +153,41 @@ function manageLogIn(event){
   userName = document.getElementById('username').value
   password = document.getElementById('password').value
   logInForm = document.querySelector('.log-in-form-body')
+  getAndCacheToken(userName, password)
+}
+
+function manageCreateUser() {
+
+  //removing log in form
+  logInForm = document.querySelector('.log-in-form-body')
   logInForm.classList.add('lgf-hidden')
+
+  //adding create user form
+  createUserForm = document.querySelector('.create-form-body')
+  createUserForm.classList.remove('create-hidden')
+}
+
+async function createUser(event){
+  event.preventDefault()
+
+  name = JSON.stringify(document.getElementById('create-name').value).split(' ')
+  firstName = name[0]
+  lastName = (name[1]) ? name[1]: ''
+  userName = document.getElementById('create-username').value
+  password = document.getElementById('create-password').value
+
+  const response = await fetch('http://127.0.0.1:8000/api/createUser/', {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      first_name: `${firstName}`,
+      last_name: `${lastName}`,
+      username: `${userName}`,
+      password: `${password}`,
+  })})
+  
   getAndCacheToken(userName, password)
 }
 
@@ -189,12 +229,18 @@ function deleteToken() {
 
 
 
+
+//Onload handeling
 window.onload = function () {
   this.console.log('loaded page')
   
   //setting event listeners
   lgsb = document.querySelector('.log-in-submit-button')
   lgsb.addEventListener('click', manageLogIn)
+  ceb = document.querySelector('.create-account-button')
+  ceb.addEventListener('click', manageCreateUser)
+  csb = document.querySelector('.create-submit-button')
+  csb.addEventListener('click', createUser)
 
   setHTMLOnPageLoad()
 }

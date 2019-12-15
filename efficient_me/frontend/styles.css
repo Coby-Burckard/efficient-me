@@ -42,12 +42,40 @@ h1 {
 
 .log-in-form-body {
   position: absolute;
-  display: flex;
+  z-index: 1000;
+  /* display: flex; */
   background-color: white;
   color: #071838;
 }
 
+.log-in-form > * {
+  display: block;
+  background-color: white;
+}
+
 .lgf-hidden {
+  display: none;
+}
+
+.create-account-button {
+  cursor: pointer;
+  color: #071838;
+}
+
+.create-form-body {
+  position: absolute;
+  z-index: 1000;
+  /* display: flex; */
+  background-color: white;
+  color: #071838;
+}
+
+.create-form > * {
+  display: block;
+  background-color: white;
+}
+
+.create-hidden {
   display: none;
 }
 

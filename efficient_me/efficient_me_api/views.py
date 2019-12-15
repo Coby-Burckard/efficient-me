@@ -6,15 +6,6 @@ from .permissions import IsOwnerOrBackOff
 from rest_framework.authentication import TokenAuthentication
 
 
-'''
-Notes:
-    Javascript fetch for testing in the frontend
-        const response = await fetch('http://127.0.0.1:8000/activities/', {headers:{'Authorization': 'Basic ' + btoa('admin:admin')}});
-        const myJson = await response.json();
-        console.log(JSON.stringify(myJson));
-'''
-
-
 class RUDActivityType(generics.RetrieveUpdateDestroyAPIView):
     '''
     get or delete an activity

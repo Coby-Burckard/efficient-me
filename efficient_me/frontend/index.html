@@ -54,7 +54,18 @@
         <g></g>
       </svg>
       <h1>Efficient Me</h1>
-      <span class="log-in-or-out"></span>
+      <div class="log-parent">
+        <span class="log-in-or-out"></span>
+        <div class="log-in-form-body lgf-hidden">
+          <form action="" class="log-in-form">
+            <label for="username">username</label>
+            <input type="text" id="username" required />
+            <label for="password">password</label>
+            <input type="text" id="password" required />
+            <button type="button" class="log-in-submit-button">Login</button>
+          </form>
+        </div>
+      </div>
     </nav>
 
     <!-- start of the non-nav body -->

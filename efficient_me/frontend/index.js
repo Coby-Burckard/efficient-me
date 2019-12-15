@@ -11,13 +11,19 @@ function updatePageHome(){
 
   //setting correct log-in event listener
   logInOutButton.removeEventListener('click', deleteToken)
-  logInOutButton.addEventListener('click', getAndCacheToken)
+  logInOutButton.addEventListener('click', showLogIn)
 
   //updating the body
   const parentSection = document.querySelector('.body-block-1')
   while (parentSection.firstChild) {parentSection.removeChild(parentSection.firstChild)}
   const homeInnerHtml = '<h2 class="body-block-header">Become Efficient</h2><p class="description">Start your journey to 10,000 hours with <span>Efficient Me</span></p><p class="get-started-button"><a href="userPage">Get Started!</a></p>'
   parentSection.innerHTML = homeInnerHtml
+}
+
+//log in form display functionality
+function showLogIn() {
+  logInForm = document.querySelector('.log-in-form-body')
+  logInForm.classList.remove('lgf-hidden')
 }
 
 async function updatePagetoUser(token){
@@ -31,7 +37,7 @@ async function updatePagetoUser(token){
   logInOutButton.innerText = 'log out'
 
   //setting correct log-out event listeners
-  logInOutButton.removeEventListener('click', getAndCacheToken)
+  logInOutButton.removeEventListener('click', showLogIn)
   logInOutButton.addEventListener('click', deleteToken)
 
   //updating the body
@@ -136,7 +142,16 @@ async function fetchUserData(token) {
 
 
 // login and log out handeling
-async function getAndCacheToken () {
+function manageLogIn(event){
+  event.preventDefault()
+  userName = document.getElementById('username').value
+  password = document.getElementById('password').value
+  logInForm = document.querySelector('.log-in-form-body')
+  logInForm.classList.add('lgf-hidden')
+  getAndCacheToken(userName, password)
+}
+
+async function getAndCacheToken (userName, password) {
   /*
     Call back function on click of the 'log in' button. The function
       1. submits a request to the api for a token with the user's credentials
@@ -149,8 +164,8 @@ async function getAndCacheToken () {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      username: "admin",
-      password: "admin",
+      username: `${userName}`,
+      password: `${password}`,
   })})
   const token = await response.json()
 
@@ -176,5 +191,10 @@ function deleteToken() {
 
 window.onload = function () {
   this.console.log('loaded page')
+  
+  //setting event listeners
+  lgsb = document.querySelector('.log-in-submit-button')
+  lgsb.addEventListener('click', manageLogIn)
+
   setHTMLOnPageLoad()
 }

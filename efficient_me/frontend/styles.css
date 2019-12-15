@@ -30,10 +30,25 @@ h1 {
   margin-right: 2rem;
 }
 
+/*log in form and button handling*/
 .log-in-sign-up,
-.log-out {
+.log-out,
+.log-in-or-out {
+  cursor: pointer;
+  cursor: hand;
   font-size: 0.75rem;
   margin-right: 0.5rem;
+}
+
+.log-in-form-body {
+  position: absolute;
+  display: flex;
+  background-color: white;
+  color: #071838;
+}
+
+.lgf-hidden {
+  display: none;
 }
 
 /* first body section */

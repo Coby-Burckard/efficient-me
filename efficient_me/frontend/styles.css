@@ -110,3 +110,19 @@ h1 {
   color: black;
   background-color: white;
 }
+
+/* universal features */
+
+.hidden {
+  display: none;
+}
+
+.error {
+  color: red;
+}
+
+.close {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+}

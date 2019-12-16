@@ -23,7 +23,11 @@ function updatePageHome(){
 //log in form display functionality
 function showLogIn() {
   logInForm = document.querySelector('.log-in-form-body')
-  logInForm.classList.remove('lgf-hidden')
+  logInForm.classList.remove('hidden')
+}
+
+function hideParent() {
+  this.parentNode.parentNode.parentNode.classList.add('hidden')
 }
 
 async function updatePagetoUser(token){
@@ -32,9 +36,9 @@ async function updatePagetoUser(token){
 
   //hiding create and log in
   lgf = document.querySelector('.log-in-form-body')
-  lgf.classList.add('lgf-hidden')
+  lgf.classList.add('hidden')
   cuf = document.querySelector('.create-form-body')
-  cuf.classList.add('create-hidden')
+  cuf.classList.add('hidden')
 
   //updating the login/logout button
   const logInOutButton = document.querySelector('.log-in-or-out')
@@ -150,31 +154,30 @@ async function fetchUserData(token) {
 // login and log out handeling
 function manageLogIn(event){
   event.preventDefault()
-  userName = document.getElementById('username').value
-  password = document.getElementById('password').value
-  logInForm = document.querySelector('.log-in-form-body')
+  let userName = document.getElementById('username').value
+  let password = document.getElementById('password').value
   getAndCacheToken(userName, password)
 }
 
-function manageCreateUser() {
 
+function manageCreateUser(event) {
   //removing log in form
   logInForm = document.querySelector('.log-in-form-body')
-  logInForm.classList.add('lgf-hidden')
+  logInForm.classList.add('hidden')
 
   //adding create user form
   createUserForm = document.querySelector('.create-form-body')
-  createUserForm.classList.remove('create-hidden')
+  createUserForm.classList.remove('hidden')
 }
 
 async function createUser(event){
   event.preventDefault()
-
-  name = JSON.stringify(document.getElementById('create-name').value).split(' ')
-  firstName = name[0]
-  lastName = (name[1]) ? name[1]: ''
-  userName = document.getElementById('create-username').value
-  password = document.getElementById('create-password').value
+  let name = JSON.stringify(document.getElementById('create-name').value).split(' ')
+  let firstName = name[0]
+  let lastName = (name[1]) ? name[1]: ''
+  let userName = document.getElementById('create-username').value
+  let password = document.getElementById('create-password').value
+  const errorMessage = document.querySelector('.create-error')
 
   const response = await fetch('http://127.0.0.1:8000/api/createUser/', {
     method: "POST",
@@ -187,8 +190,14 @@ async function createUser(event){
       username: `${userName}`,
       password: `${password}`,
   })})
-  
-  getAndCacheToken(userName, password)
+
+  if (response.status != 201){
+    errorMessage.classList.remove('hidden')
+  }
+  else{
+    errorMessage.classList.add('hidden')
+    getAndCacheToken(userName, password)
+  }
 }
 
 async function getAndCacheToken (userName, password) {
@@ -198,6 +207,7 @@ async function getAndCacheToken (userName, password) {
       2. recieves and stores the token in a cookie
       3. calls the page update function with the user's token
   */
+  const errorMessage = document.querySelector('.log-in-error')
   const response = await fetch('http://127.0.0.1:8000/api/getToken/', {
     method: "POST",
     headers: {
@@ -207,10 +217,15 @@ async function getAndCacheToken (userName, password) {
       username: `${userName}`,
       password: `${password}`,
   })})
-  const token = await response.json()
-
-  document.cookie = `token=${token.token}`
-  updatePagetoUser(token.token)
+  if (response.status != 200){
+    errorMessage.classList.remove('hidden')
+  }
+  else {
+    errorMessage.classList.add('hidden')
+    const token = await response.json() 
+    document.cookie = `token=${token.token}`
+    updatePagetoUser(token.token)
+  }
 }
 
 function deleteToken() {
@@ -234,13 +249,17 @@ function deleteToken() {
 window.onload = function () {
   this.console.log('loaded page')
   
-  //setting event listeners
+  //setting home event listeners
   lgsb = document.querySelector('.log-in-submit-button')
   lgsb.addEventListener('click', manageLogIn)
   ceb = document.querySelector('.create-account-button')
   ceb.addEventListener('click', manageCreateUser)
   csb = document.querySelector('.create-submit-button')
   csb.addEventListener('click', createUser)
+  closeLogIn = document.querySelector('.close-log-in')
+  closeCreate = document.querySelector('.close-create')
+  closeLogIn.addEventListener('click', hideParent)
+  closeCreate.addEventListener('click', hideParent)
 
   setHTMLOnPageLoad()
 }

@@ -56,8 +56,12 @@
       <h1>Efficient Me</h1>
       <div class="log-parent">
         <span class="log-in-or-out"></span>
-        <div class="log-in-form-body lgf-hidden">
+        <div class="log-in-form-body hidden">
           <form action="" class="log-in-form">
+            <div>
+              <span class="log-in-error error hidden">Invalid log in</span>
+              <span class="close close-log-in">X</span>
+            </div>
             <label for="username">username</label>
             <input type="text" id="username" required />
             <label for="password">password</label>
@@ -68,8 +72,12 @@
             </div>
           </form>
         </div>
-        <div class="create-form-body create-hidden">
+        <div class="create-form-body hidden">
           <form action="" class="create-form">
+            <div>
+              <span class="create-error error hidden">User already exists</span>
+              <span class="close close-create">X</span>
+            </div>
             <label for="create-name">name</label>
             <input type="text" id="create-name" required />
             <label for="create-username">username</label>

@@ -14,10 +14,11 @@ function updatePageHome(){
   logInOutButton.addEventListener('click', showLogIn)
 
   //updating the body
-  const parentSection = document.querySelector('.body-block-1')
-  while (parentSection.firstChild) {parentSection.removeChild(parentSection.firstChild)}
-  const homeInnerHtml = '<h2 class="body-block-header">Become Efficient</h2><p class="description">Start your journey to 10,000 hours with <span>Efficient Me</span></p><p class="get-started-button"><a href="userPage">Get Started!</a></p>'
-  parentSection.innerHTML = homeInnerHtml
+  const homeBody = document.querySelector('.home-body')
+  const userBody = document.querySelector('.user-body')
+  userBody.classList.add('hidden')
+  homeBody.classList.remove('hidden')
+
 }
 
 //log in form display functionality
@@ -29,6 +30,10 @@ function showLogIn() {
 function hideParent() {
   this.parentNode.parentNode.parentNode.classList.add('hidden')
 }
+
+
+
+
 
 async function updatePagetoUser(token){
   //updates index.html to the user page
@@ -51,11 +56,31 @@ async function updatePagetoUser(token){
   logInOutButton.addEventListener('click', deleteToken)
 
   //updating the body
-  const parentSection = document.querySelector('.body-block-1')
-  while (parentSection.firstChild) {parentSection.removeChild(parentSection.firstChild)}
-  const userInfo = await fetchUserData(token)
-  parentSection.appendChild(userInfo)
+  const homeBody = document.querySelector('.home-body')
+  const userBody = document.querySelector('.user-body')
+  fetchUserData(token).then( () => {
+    homeBody.classList.add('hidden')
+    userBody.classList.remove('hidden')  
+  })
 }
+
+function buildTabs(activities){
+  const tabBody = document.querySelector('.tab-body')
+  while(tabBody.children.length > 1) {tabBody.removeChild(tabBody.lastChild)}
+
+  if (activities != null) {
+    activities.forEach(activity => {
+      const tabDiv = document.createElement('div')
+      tabDiv.classList.add('tab-button')
+      tabDiv.innerText = activity.title
+      tabBody.appendChild(tabDiv)
+    });
+  }
+
+  tabBody.classList.remove('hidden')
+}
+
+
 
 function setHTMLOnPageLoad(){
   //runs on page load to set index to the home page or user page
@@ -105,49 +130,51 @@ async function fetchUserData(token) {
   const timeallocations = await TAResponse.json()
 
   console.log(activities, goals, timeallocations)
+  buildTabs(activities)
 
-  //building the html structure for activities - goals - time allocations
-  const parentList = document.createElement('ol')
-  parentList.classList.add('activity-list')
+  return 
+
+//   //building the html structure for activities - goals - time allocations
+//   const parentList = document.createElement('ol')
+//   parentList.classList.add('activity-list')
   
-  // (this is going to be soooo inefficient **fix on back end later)
-  activities.forEach(activity => {
-    const activityLI = document.createElement('li')
-    const goalsOL = document.createElement('ol')
-    activityLI.innerText = activity.title
-    activityLI.classList.add('activity')
-    goalsOL.classList.add('goal-list')
-    activityLI.appendChild(goalsOL)
-    parentList.appendChild(activityLI)
+//   // (this is going to be soooo inefficient **fix on back end later)
+//   activities.forEach(activity => {
+//     const activityLI = document.createElement('li')
+//     const goalsOL = document.createElement('ol')
+//     activityLI.innerText = activity.title
+//     activityLI.classList.add('activity')
+//     goalsOL.classList.add('goal-list')
+//     activityLI.appendChild(goalsOL)
+//     parentList.appendChild(activityLI)
 
-    //adding goals the respective activities
-    let activityID = activity.id 
-    goals.forEach(goal => {
-      if (goal.activity == activityID) {
-        const goalLI = document.createElement('li')
-        const TAOL = document.createElement('ol')
-        goalLI.innerText = goal.title
-        goalLI.classList.add('goal')
-        TAOL.classList.add('time-allocation-list')
-        goalLI.appendChild(TAOL)
-        goalsOL.appendChild(goalLI)
+//     //adding goals the respective activities
+//     let activityID = activity.id 
+//     goals.forEach(goal => {
+//       if (goal.activity == activityID) {
+//         const goalLI = document.createElement('li')
+//         const TAOL = document.createElement('ol')
+//         goalLI.innerText = goal.title
+//         goalLI.classList.add('goal')
+//         TAOL.classList.add('time-allocation-list')
+//         goalLI.appendChild(TAOL)
+//         goalsOL.appendChild(goalLI)
 
-        // adding time allocations to the respective goals
-        let goalID = goal.id
-        timeallocations.forEach(timeAll => {
-          if (timeAll.goal == goalID){
-            const TALI = document.createElement('li')
-            TALI.innerText = timeAll.title
-            TALI.classList.add('time-allocation')
-            TAOL.appendChild(TALI)
-          }
-        })
-      }
-    })
- });
-  return parentList
+//         // adding time allocations to the respective goals
+//         let goalID = goal.id
+//         timeallocations.forEach(timeAll => {
+//           if (timeAll.goal == goalID){
+//             const TALI = document.createElement('li')
+//             TALI.innerText = timeAll.title
+//             TALI.classList.add('time-allocation')
+//             TAOL.appendChild(TALI)
+//           }
+//         })
+//       }
+//     })
+//  });
+//   return parentList
 }
-
 
 
 

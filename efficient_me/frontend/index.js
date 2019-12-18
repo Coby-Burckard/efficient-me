@@ -288,5 +288,81 @@ window.onload = function () {
   closeLogIn.addEventListener('click', hideParent)
   closeCreate.addEventListener('click', hideParent)
 
+  //active working area
+  const tabBody = document.querySelector('.tab-body')
+  tabBody.addEventListener('click', manageTabClick)
+
   setHTMLOnPageLoad()
+}
+
+
+
+
+
+
+// active working space
+
+async function addNewActivity(defaultTab){
+  const formTab = document.createElement('div')
+  const innerHtml = '<form class="new-activity-form"><input type="text" name="new-activity"></form><span class="close-new-tab">x</span>'
+  formTab.classList.add('tab-button')
+  formTab.innerHTML = innerHtml
+  
+  const newActivityForm = await formTab.firstChild
+  newActivityForm.addEventListener('submit', newActivitySubmit)
+  defaultTab.insertAdjacentElement('afterend', formTab)
+}
+
+function newActivitySubmit(event){
+  event.preventDefault()
+  const submittedTab = event.srcElement
+  const activityName = submittedTab.firstChild.value
+  if (activityName == "") {
+    closeTab(submittedTab.parentNode)
+  }
+  else {
+    closeTab(submittedTab.parentNode)
+    const newTab = document.createElement('div')
+    const defaultTab = document.getElementById('default')
+    newTab.innerText = activityName
+    newTab.classList.add('tab-button')
+    defaultTab.insertAdjacentElement('afterend', newTab)
+    updateDBActivities(activityName)
+  }
+
+}
+
+async function updateDBActivities(activityName){
+  const token = document.cookie.split(';').filter((item) => item.trim().startsWith('token='))[0].split('=')[1]
+
+  const response = await fetch('http://127.0.0.1:8000/api/activities/', {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Token ${token}`
+    },
+    body: JSON.stringify({
+      title: `${activityName}`,
+      activity_type: [1],
+  })})
+  if (response.status != 201){
+    console.log('screwed up adding an activity to the db status = ' + response.status)
+  }
+}
+
+function closeTab(element) {
+  element.parentNode.removeChild(element)
+}
+
+function manageTabClick(event){
+  const clickedTab = event.target
+  if (clickedTab.id == 'default'){
+    addNewActivity(clickedTab)
+  }
+  else if (clickedTab.classList.contains('tab-button')){
+    console.log('highlight and load ' + clickedTab.innerText)
+  }
+  else if (clickedTab.classList.contains('close-new-tab')){
+    closeTab(clickedTab.parentNode)
+  }
 }

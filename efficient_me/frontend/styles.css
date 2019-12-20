@@ -97,6 +97,10 @@ h1 {
   background-color: #071838;
 }
 
+.highlight-tab {
+  background-color: red;
+}
+
 /* first body section */
 
 .home-body {

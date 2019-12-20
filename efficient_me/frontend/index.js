@@ -326,6 +326,8 @@ function newActivitySubmit(event){
     const defaultTab = document.getElementById('default')
     newTab.innerText = activityName
     newTab.classList.add('tab-button')
+    highlightNewTab(newTab)
+    buildGoals(newTab)
     defaultTab.insertAdjacentElement('afterend', newTab)
     updateDBActivities(activityName)
   }
@@ -354,13 +356,26 @@ function closeTab(element) {
   element.parentNode.removeChild(element)
 }
 
+function highlightNewTab(clickedTab) {
+  //removes highlight class from all tabs and highlight the new tab
+  const tabs = document.querySelectorAll(".tab-button")
+  tabs.forEach(tab => tab.classList.remove("highlight-tab"))
+  clickedTab.classList.add('highlight-tab')
+}
+
+function buildGoals(){
+
+}
+
 function manageTabClick(event){
   const clickedTab = event.target
   if (clickedTab.id == 'default'){
     addNewActivity(clickedTab)
+    
   }
   else if (clickedTab.classList.contains('tab-button')){
-    console.log('highlight and load ' + clickedTab.innerText)
+    highlightNewTab(clickedTab)
+    buildGoals(clickedTab)
   }
   else if (clickedTab.classList.contains('close-new-tab')){
     closeTab(clickedTab.parentNode)

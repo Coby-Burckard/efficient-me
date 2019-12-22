@@ -14,7 +14,8 @@ urlpatterns = [
     path('api/timeallocations/', views.LCTimeAllocation.as_view()),
     path('api/timeallocations/<int:pk>', views.RUDTimeAllocation.as_view()),
     path('api/createUser/', views.CUser.as_view()),
-    path('api/getToken/', auth_token_views.obtain_auth_token)
+    path('api/getToken/', auth_token_views.obtain_auth_token),
+    path('api/userPage/', views.fullUserPage.as_view())
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

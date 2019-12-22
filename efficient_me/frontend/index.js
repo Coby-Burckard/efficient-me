@@ -1,4 +1,4 @@
-//Functions to modify page html based on user logged in vs. logged out status
+//home page functions
 function updatePageHome(){
   //updates index.html to the home page
   this.console.log('updating page to home')
@@ -34,7 +34,7 @@ function hideParent() {
 
 
 
-
+// user page construction and ux handeling
 async function updatePagetoUser(token){
   //updates index.html to the user page
   this.console.log('updating page to user')
@@ -64,7 +64,10 @@ async function updatePagetoUser(token){
   })
 }
 
-function buildTabs(activities){
+function buildTabs(activities, goals, timeallocations){
+  /*
+   on page load, user tabs are constructed
+  */
   const tabBody = document.querySelector('.tab-body')
   while(tabBody.children.length > 1) {tabBody.removeChild(tabBody.lastChild)}
 
@@ -78,6 +81,92 @@ function buildTabs(activities){
   }
 
   tabBody.classList.remove('hidden')
+}
+
+async function addNewActivity(defaultTab){
+  /*
+    adds a form in a tab adjacent to the add button and the apropriate event listeners to submit or close it
+  */
+  const formTab = document.createElement('div')
+  const innerHtml = '<form class="new-activity-form"><input type="text" name="new-activity"></form><span class="close-new-tab">x</span>'
+  formTab.classList.add('tab-button')
+  formTab.innerHTML = innerHtml
+  
+  const newActivityForm = await formTab.firstChild
+  newActivityForm.addEventListener('submit', newActivitySubmit)
+  defaultTab.insertAdjacentElement('afterend', formTab)
+}
+
+function newActivitySubmit(event){
+  /*
+    on submission of a new activity tab.  The tab is created, selected, and stored in the db
+
+    *** still needs invalid submission handeling
+  */
+  event.preventDefault()
+  const submittedTab = event.srcElement
+  const activityName = submittedTab.firstChild.value
+  if (activityName == "") {
+    closeTab(submittedTab.parentNode)
+  }
+  else {
+    closeTab(submittedTab.parentNode)
+    const newTab = document.createElement('div')
+    const defaultTab = document.getElementById('default')
+    newTab.innerText = activityName
+    newTab.classList.add('tab-button')
+    highlightNewTab(newTab)
+    buildGoals(newTab)
+    defaultTab.insertAdjacentElement('afterend', newTab)
+    updateDBActivities(activityName)
+  }
+
+}
+
+function closeTab(element) {
+  element.parentNode.removeChild(element)
+}
+
+function highlightNewTab(clickedTab) {
+  /*
+    removes highlight class from all tabs and highlight the new tab
+  */
+  const tabs = document.querySelectorAll(".tab-button")
+  tabs.forEach(tab => tab.classList.remove("highlight-tab"))
+  clickedTab.classList.add('highlight-tab')
+}
+
+function buildGoals(activity, goals, timeallocations){
+  /*
+    On load, the goals are constructed and placed in the apropriate place
+  */
+
+}
+
+function showGoals(clickedTab){
+  /*
+    hides all goal bodies and undhides the body of the passed in tab
+  */
+}
+
+function manageTabClick(event){
+  /*
+    on click of a tab, calls the apropriate function based on the content of the clicked tab
+      if the (+) tab is clicked - new acitivty functions are called
+      if any existing tab is called, the tab is highlighted and the apropriate body is displayed
+  */
+  const clickedTab = event.target
+  if (clickedTab.id == 'default'){
+    addNewActivity(clickedTab)
+    
+  }
+  else if (clickedTab.classList.contains('tab-button')){
+    highlightNewTab(clickedTab)
+    showGoals(clickedTab)
+  }
+  else if (clickedTab.classList.contains('close-new-tab')){
+    closeTab(clickedTab.parentNode)
+  }
 }
 
 
@@ -130,7 +219,7 @@ async function fetchUserData(token) {
   const timeallocations = await TAResponse.json()
 
   console.log(activities, goals, timeallocations)
-  buildTabs(activities)
+  buildTabs(activities, goals, timeallocations)
 
   return 
 
@@ -255,6 +344,27 @@ async function getAndCacheToken (userName, password) {
   }
 }
 
+async function updateDBActivities(activityName){
+  /*
+    adds a new activity to the db
+  */
+  const token = document.cookie.split(';').filter((item) => item.trim().startsWith('token='))[0].split('=')[1]
+
+  const response = await fetch('http://127.0.0.1:8000/api/activities/', {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Token ${token}`
+    },
+    body: JSON.stringify({
+      title: `${activityName}`,
+      activity_type: [1],
+  })})
+  if (response.status != 201){
+    console.log('screwed up adding an activity to the db status = ' + response.status)
+  }
+}
+
 function deleteToken() {
   /*
     deleteToken is a callback forwhen the log out button is clicked. The following actions are performed
@@ -302,82 +412,4 @@ window.onload = function () {
 
 // active working space
 
-async function addNewActivity(defaultTab){
-  const formTab = document.createElement('div')
-  const innerHtml = '<form class="new-activity-form"><input type="text" name="new-activity"></form><span class="close-new-tab">x</span>'
-  formTab.classList.add('tab-button')
-  formTab.innerHTML = innerHtml
-  
-  const newActivityForm = await formTab.firstChild
-  newActivityForm.addEventListener('submit', newActivitySubmit)
-  defaultTab.insertAdjacentElement('afterend', formTab)
-}
 
-function newActivitySubmit(event){
-  event.preventDefault()
-  const submittedTab = event.srcElement
-  const activityName = submittedTab.firstChild.value
-  if (activityName == "") {
-    closeTab(submittedTab.parentNode)
-  }
-  else {
-    closeTab(submittedTab.parentNode)
-    const newTab = document.createElement('div')
-    const defaultTab = document.getElementById('default')
-    newTab.innerText = activityName
-    newTab.classList.add('tab-button')
-    highlightNewTab(newTab)
-    buildGoals(newTab)
-    defaultTab.insertAdjacentElement('afterend', newTab)
-    updateDBActivities(activityName)
-  }
-
-}
-
-async function updateDBActivities(activityName){
-  const token = document.cookie.split(';').filter((item) => item.trim().startsWith('token='))[0].split('=')[1]
-
-  const response = await fetch('http://127.0.0.1:8000/api/activities/', {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Token ${token}`
-    },
-    body: JSON.stringify({
-      title: `${activityName}`,
-      activity_type: [1],
-  })})
-  if (response.status != 201){
-    console.log('screwed up adding an activity to the db status = ' + response.status)
-  }
-}
-
-function closeTab(element) {
-  element.parentNode.removeChild(element)
-}
-
-function highlightNewTab(clickedTab) {
-  //removes highlight class from all tabs and highlight the new tab
-  const tabs = document.querySelectorAll(".tab-button")
-  tabs.forEach(tab => tab.classList.remove("highlight-tab"))
-  clickedTab.classList.add('highlight-tab')
-}
-
-function buildGoals(){
-
-}
-
-function manageTabClick(event){
-  const clickedTab = event.target
-  if (clickedTab.id == 'default'){
-    addNewActivity(clickedTab)
-    
-  }
-  else if (clickedTab.classList.contains('tab-button')){
-    highlightNewTab(clickedTab)
-    buildGoals(clickedTab)
-  }
-  else if (clickedTab.classList.contains('close-new-tab')){
-    closeTab(clickedTab.parentNode)
-  }
-}

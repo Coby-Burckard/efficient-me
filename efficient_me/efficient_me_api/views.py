@@ -1,9 +1,11 @@
 from .models import Activity, Goal, TimeAllocation, ActivityType
 from django.contrib.auth.models import User
-from .serializers import ActivitySerializer, GoalSerializer, TimeAllocationSerializer, ActivityTypeSerializer, UserSerializer
+from .serializers import ActivitySerializer, GoalSerializer, TimeAllocationSerializer, ActivityTypeSerializer, UserSerializer, NestedGoalSerializer, NestedActivitySerializer
 from rest_framework import generics, permissions
 from .permissions import IsOwnerOrBackOff
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 
 class RUDActivityType(generics.RetrieveUpdateDestroyAPIView):
@@ -111,3 +113,17 @@ class CUser(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
+
+
+class fullUserPage(APIView):
+    """
+        Responds with the owner's full user page if they are authenticated
+    """
+
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrBackOff]
+
+    def get(self, format=None):
+        activities = Activity.objects.all()
+        serializer = NestedActivitySerializer(
+            activities, many=True, read_only=True)
+        return Response(serializer.data)

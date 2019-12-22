@@ -41,3 +41,21 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'password',
                   'first_name', 'last_name']
+
+
+class NestedGoalSerializer(serializers.ModelSerializer):
+    timeallocation_set = TimeAllocationSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Goal
+        fields = ['id', 'created', 'title', 'description',
+                  'hours_required', 'priority', 'deadline', 'activity', 'timeallocation_set']
+
+
+class NestedActivitySerializer(serializers.ModelSerializer):
+    goal_set = NestedGoalSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Activity
+        fields = ['id', 'created', 'title',
+                  'description', 'activity_type', 'goal_set']

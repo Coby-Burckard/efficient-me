@@ -64,23 +64,138 @@ async function updatePagetoUser(token){
   })
 }
 
-function buildTabs(activities, goals, timeallocations){
+function buildTabs(userData){
   /*
    on page load, user tabs are constructed
   */
   const tabBody = document.querySelector('.tab-body')
   while(tabBody.children.length > 1) {tabBody.removeChild(tabBody.lastChild)}
 
-  if (activities != null) {
-    activities.forEach(activity => {
+  if (userData != null) {
+    //constructing each overarching tab
+    userData.forEach(activity => {
       const tabDiv = document.createElement('div')
       tabDiv.classList.add('tab-button')
       tabDiv.innerText = activity.title
+      tabDiv.id = activity.id
       tabBody.appendChild(tabDiv)
+
+      // constructing the goal cards and new goal form
+      const goalBody = document.createElement('div')
+      goalBody.classList.add('hidden')
+      goalBody.classList.add('goal-body')
+      goalBody.id = `goal-body-for-${activity.id}`
+
+      // const goalForm = buildGoalForm(activity)
+      const goals = activity.goal_set
+      if (goals.length > 0) {
+        goals.forEach(goal => {
+          const goalCard = buildGoal(goal)
+          goalBody.appendChild(goalCard)          
+        })
+      }
+      tabBody.insertAdjacentElement('afterend',goalBody)
     });
   }
 
   tabBody.classList.remove('hidden')
+}
+
+function buildGoal(goal){
+  /*
+    returns a card for the passed goal. The card has the hidden time allocations as well
+  */
+
+  //creating goal card elements and appending
+  const TAandGoalContainer = document.createElement('div')
+  const goalContainer = document.createElement('div')
+  const title = document.createElement('h3')
+  const deadline = document.createElement('time')
+  const description = document.createElement('p')
+  const hours = document.createElement('div')
+  const expandButton = document.createElement('a')
+  const collapseButton = document.createElement('a')
+  goalContainer.appendChild(title)
+  goalContainer.appendChild(hours)
+  goalContainer.appendChild(description)
+  goalContainer.appendChild(deadline)
+  goalContainer.appendChild(expandButton)
+  goalContainer.appendChild(collapseButton)
+  TAandGoalContainer.appendChild(goalContainer)
+
+  //adding style classes
+  goalContainer.classList.add('card')
+  title.classList.add('goal-title')
+  hours.classList.add('goal-hours')
+  deadline.classList.add('goal-deadline')
+  description.classList.add('goal-description')
+  expandButton.classList.add('goal-expand-button')
+  collapseButton.classList.add('goal-collapse-button')
+  collapseButton.classList.add('hidden')
+  TAandGoalContainer.classList.add('ta-goal-container')
+
+  //adding goal details to respective elements
+  title.innerText = goal.title
+  description.innerText = goal.description
+  hours.innerText = goal.hours_required
+  deadline.setAttribute('datetime', goal.deadline)
+  deadline.innerText = goal.deadline
+  expandButton.setAttribute('href', `#/`)
+  expandButton.innerText = '<+>'
+  collapseButton.innerText = '<->'
+  collapseButton.setAttribute('href', '#/')
+
+  //builds paginated time allocations with a new form at top
+  const TAlist = buildTAs(goal.timeallocation_set, goal.id)
+  TAandGoalContainer.appendChild(TAlist)
+
+  return TAandGoalContainer
+}
+
+function buildTAs(TAs, goalID){
+  /*
+  takes a JSON list of time allocations and builds and returns a structured list 
+  */
+  const TAlistOverall = document.createElement('div')
+  TAlistOverall.id = `${goalID}-TA-box`
+  TAlistOverall.classList.add('TA-list-box')
+
+  TAs.forEach(time => {
+
+    // creating the overall elements
+    const TAelement = document.createElement('div')
+    const title = document.createElement('h4')
+    const description = document.createElement('p')
+    const dateComplete = document.createElement('time')
+    const hours = document.createElement('div')
+
+    // adding specific details
+    TAelement.classList.add('TAelement')
+    title.classList.add('TAtitle')
+    description.classList.add('TAdescription')
+    dateComplete.classList.add('dateComplete')
+    hours.classList.add('TAhours')
+    title.innerText = time.title
+    description.innerText = time.description
+    dateComplete.setAttribute('datetime', time.date_complete)
+    dateComplete.innerText = time.date_complete
+    hours.innerHTML = time.time_speant
+
+    //constructing the element
+    TAelement.appendChild(title)
+    TAelement.appendChild(description)
+    TAelement.appendChild(dateComplete)
+    TAelement.appendChild(hours)
+    TAlistOverall.appendChild(TAelement)
+  })
+
+  return TAlistOverall
+}
+
+function buildGoalForm(activity){
+  /*
+    constructs and hides a new goal form for each activity tab
+  */
 }
 
 async function addNewActivity(defaultTab){
@@ -116,7 +231,6 @@ function newActivitySubmit(event){
     newTab.innerText = activityName
     newTab.classList.add('tab-button')
     highlightNewTab(newTab)
-    buildGoals(newTab)
     defaultTab.insertAdjacentElement('afterend', newTab)
     updateDBActivities(activityName)
   }
@@ -129,19 +243,23 @@ function closeTab(element) {
 
 function highlightNewTab(clickedTab) {
   /*
-    removes highlight class from all tabs and highlight the new tab
+    1. removes highlight class from all tabs and highlight the new tab
+    2. hides all goals and unhides the selected tabs goals
   */
   const tabs = document.querySelectorAll(".tab-button")
   tabs.forEach(tab => tab.classList.remove("highlight-tab"))
   clickedTab.classList.add('highlight-tab')
+
+  //hiding all goal-bodies
+  goalBodies = document.querySelectorAll('.goal-body')
+  goalBodies.forEach(body => {body.classList.add('hidden')})
+
+  //unhiding selected tab's goals
+  const activityID = clickedTab.id
+  const clickedGoalBody = document.getElementById(`goal-body-for-${activityID}`)
+  clickedGoalBody.classList.remove('hidden')
 }
 
-function buildGoals(activity, goals, timeallocations){
-  /*
-    On load, the goals are constructed and placed in the apropriate place
-  */
-
-}
 
 function showGoals(clickedTab){
   /*
@@ -193,76 +311,19 @@ function setHTMLOnPageLoad(){
 
 //Functions to fetch user data
 async function fetchUserData(token) {
-  const activityResponse = await fetch('http://127.0.0.1:8000/api/activities/', {
+  const userData = await fetch('http://127.0.0.1:8000/api/userPage/', {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Token ${token}`
     },
   })
-  const goalResponse = await fetch('http://127.0.0.1:8000/api/goals/', {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Token ${token}`
-    },
-  })
-  const TAResponse = await fetch('http://127.0.0.1:8000/api/timeallocations/', {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Token ${token}`
-    },
-  })
-  const activities = await activityResponse.json()
-  const goals = await goalResponse.json()
-  const timeallocations = await TAResponse.json()
 
-  console.log(activities, goals, timeallocations)
-  buildTabs(activities, goals, timeallocations)
+  const userDataJSON = await userData.json()
+
+  buildTabs(userDataJSON) //builds the user page with the retrieved JSON
 
   return 
-
-//   //building the html structure for activities - goals - time allocations
-//   const parentList = document.createElement('ol')
-//   parentList.classList.add('activity-list')
-  
-//   // (this is going to be soooo inefficient **fix on back end later)
-//   activities.forEach(activity => {
-//     const activityLI = document.createElement('li')
-//     const goalsOL = document.createElement('ol')
-//     activityLI.innerText = activity.title
-//     activityLI.classList.add('activity')
-//     goalsOL.classList.add('goal-list')
-//     activityLI.appendChild(goalsOL)
-//     parentList.appendChild(activityLI)
-
-//     //adding goals the respective activities
-//     let activityID = activity.id 
-//     goals.forEach(goal => {
-//       if (goal.activity == activityID) {
-//         const goalLI = document.createElement('li')
-//         const TAOL = document.createElement('ol')
-//         goalLI.innerText = goal.title
-//         goalLI.classList.add('goal')
-//         TAOL.classList.add('time-allocation-list')
-//         goalLI.appendChild(TAOL)
-//         goalsOL.appendChild(goalLI)
-
-//         // adding time allocations to the respective goals
-//         let goalID = goal.id
-//         timeallocations.forEach(timeAll => {
-//           if (timeAll.goal == goalID){
-//             const TALI = document.createElement('li')
-//             TALI.innerText = timeAll.title
-//             TALI.classList.add('time-allocation')
-//             TAOL.appendChild(TALI)
-//           }
-//         })
-//       }
-//     })
-//  });
-//   return parentList
 }
 
 
@@ -387,20 +448,22 @@ window.onload = function () {
   this.console.log('loaded page')
   
   //setting home event listeners
-  lgsb = document.querySelector('.log-in-submit-button')
+  lgsb = document.querySelector('.log-in-submit-button') //log in submit form
   lgsb.addEventListener('click', manageLogIn)
-  ceb = document.querySelector('.create-account-button')
+  ceb = document.querySelector('.create-account-button') //create account form load
   ceb.addEventListener('click', manageCreateUser)
-  csb = document.querySelector('.create-submit-button')
+  csb = document.querySelector('.create-submit-button') // create account submit
   csb.addEventListener('click', createUser)
   closeLogIn = document.querySelector('.close-log-in')
   closeCreate = document.querySelector('.close-create')
   closeLogIn.addEventListener('click', hideParent)
   closeCreate.addEventListener('click', hideParent)
-
-  //active working area
-  const tabBody = document.querySelector('.tab-body')
+  const tabBody = document.querySelector('.tab-body') // opens proper tab
   tabBody.addEventListener('click', manageTabClick)
+
+  // handles goal expansion
+  const userBody = document.querySelector('.user-body')
+  userBody.addEventListener('click', handleUserBodyClick)
 
   setHTMLOnPageLoad()
 }
@@ -411,5 +474,33 @@ window.onload = function () {
 
 
 // active working space
+function handleUserBodyClick(event) {
+  /*
+    if else tree for clicks on the user body. Handels the following cases
+      1. expanding and collapsing user time allocations for a given goal
+  */
+  const clickedElement = event.target
+  
+  if (clickedElement.classList.contains('goal-expand-button')){
+    // expanding a goal to show its time allocations, hiding the expand button, unhiding the collapse button
+    const parentGoalContianer = clickedElement.closest('.ta-goal-container')
+    const timeAllocationList = parentGoalContianer.querySelector('.TA-list-box')
+    timeAllocationList.classList.add('expand')
+    clickedElement.classList.add('hidden')
 
+    //unhiding the collapse button
+    const collapseButton = parentGoalContianer.querySelector('.goal-collapse-button')
+    collapseButton.classList.remove('hidden')
+  }
+  else if (clickedElement.classList.contains('goal-collapse-button')){
+    // collapsing the time allocation list, showing the expand button, hiding the collapse button
+    const parentGoalContianer = clickedElement.closest('.ta-goal-container')
+    const timeAllocationList = parentGoalContianer.querySelector('.TA-list-box')
+    timeAllocationList.classList.remove('expand')
+    clickedElement.classList.add('hidden')
 
+    //hiding the collapse button
+    const expandButton = parentGoalContianer.querySelector('.goal-expand-button')
+    expandButton.classList.remove('hidden')
+  }
+}

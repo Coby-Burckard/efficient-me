@@ -32,8 +32,6 @@ function hideParent() {
 }
 
 
-
-
 // user page construction and ux handeling
 async function updatePagetoUser(token){
   //updates index.html to the user page
@@ -64,6 +62,7 @@ async function updatePagetoUser(token){
   })
 }
 
+
 function buildTabs(userData){
   /*
    on page load, user tabs are constructed
@@ -85,6 +84,10 @@ function buildTabs(userData){
       goalBody.classList.add('hidden')
       goalBody.classList.add('goal-body')
       goalBody.id = `goal-body-for-${activity.id}`
+      
+      // building and appending a goal form
+      const goalForm = buildGoalForm(activity.id)
+      goalBody.appendChild(goalForm)
 
       // const goalForm = buildGoalForm(activity)
       const goals = activity.goal_set
@@ -94,12 +97,16 @@ function buildTabs(userData){
           goalBody.appendChild(goalCard)          
         })
       }
-      tabBody.insertAdjacentElement('afterend',goalBody)
+      
+      // building the tab data
+      const userBody = document.querySelector('.create-user-content')
+      userBody.appendChild(goalBody)
     });
   }
 
   tabBody.classList.remove('hidden')
 }
+
 
 function buildGoal(goal){
   /*
@@ -148,9 +155,21 @@ function buildGoal(goal){
   //builds paginated time allocations with a new form at top
   const TAlist = buildTAs(goal.timeallocation_set, goal.id)
   TAandGoalContainer.appendChild(TAlist)
-
+  
   return TAandGoalContainer
 }
+
+
+function buildGoalForm(activityID){
+  /*
+    constructs and hides a new goal form
+  */
+  const formContainer = document.createElement('div')
+  formContainer.classList.add('goal-form', 'ta-goal-container')
+  formContainer.innerHTML = `<label for="goal-title-input-${activityID}">Title</label><input type="text" id="goal-title-input-${activityID}"><label for="goal-description-input-${activityID}">Description</label><input type="text" id="goal-description-input-${activityID}"><label for="goal-hours-input-${activityID}">Hours required</label><input type="text" id="goal-hours-input-${activityID}"><label for="goal-deadline-input-${activityID}">Deadline</label><input type="date" id="goal-deadline-input-${activityID}">`
+  return formContainer
+}
+
 
 function buildTAs(TAs, goalID){
   /*
@@ -192,11 +211,20 @@ function buildTAs(TAs, goalID){
   return TAlistOverall
 }
 
-function buildGoalForm(activity){
+
+buildTAform(goalID){
   /*
-    constructs and hides a new goal form for each activity tab
+    constructs a time allocation form to be added to each goal
+      the goal's id is passed in to be used in the input IDs.
   */
+
 }
+
+
+
+/*
+  New section of JS - interacting with the DB
+*/
 
 async function addNewActivity(defaultTab){
   /*
@@ -212,12 +240,14 @@ async function addNewActivity(defaultTab){
   defaultTab.insertAdjacentElement('afterend', formTab)
 }
 
+
 function newActivitySubmit(event){
   /*
     on submission of a new activity tab.  The tab is created, selected, and stored in the db
 
     *** still needs invalid submission handeling
   */
+  console.log('submitting')
   event.preventDefault()
   const submittedTab = event.srcElement
   const activityName = submittedTab.firstChild.value
@@ -225,21 +255,24 @@ function newActivitySubmit(event){
     closeTab(submittedTab.parentNode)
   }
   else {
-    closeTab(submittedTab.parentNode)
     const newTab = document.createElement('div')
-    const defaultTab = document.getElementById('default')
-    newTab.innerText = activityName
-    newTab.classList.add('tab-button')
-    highlightNewTab(newTab)
-    defaultTab.insertAdjacentElement('afterend', newTab)
+    // console.log(newTab)
+    // const defaultTab = document.getElementById('default')
+    // newTab.innerText = activityName
+    // newTab.classList.add('tab-button')
+    // highlightNewTab(newTab)
+    // closeTab(submittedTab.parentNode)
+    // defaultTab.insertAdjacentElement('afterend', newTab)
     updateDBActivities(activityName)
   }
 
 }
 
+
 function closeTab(element) {
   element.parentNode.removeChild(element)
 }
+
 
 function highlightNewTab(clickedTab) {
   /*
@@ -261,12 +294,6 @@ function highlightNewTab(clickedTab) {
 }
 
 
-function showGoals(clickedTab){
-  /*
-    hides all goal bodies and undhides the body of the passed in tab
-  */
-}
-
 function manageTabClick(event){
   /*
     on click of a tab, calls the apropriate function based on the content of the clicked tab
@@ -276,17 +303,14 @@ function manageTabClick(event){
   const clickedTab = event.target
   if (clickedTab.id == 'default'){
     addNewActivity(clickedTab)
-    
   }
   else if (clickedTab.classList.contains('tab-button')){
     highlightNewTab(clickedTab)
-    showGoals(clickedTab)
   }
   else if (clickedTab.classList.contains('close-new-tab')){
     closeTab(clickedTab.parentNode)
   }
 }
-
 
 
 function setHTMLOnPageLoad(){
@@ -305,7 +329,6 @@ function setHTMLOnPageLoad(){
     updatePageHome()
   }
 }
-
 
 
 
@@ -424,6 +447,10 @@ async function updateDBActivities(activityName){
   if (response.status != 201){
     console.log('screwed up adding an activity to the db status = ' + response.status)
   }
+  else {
+    setHTMLOnPageLoad()
+  }
+  
 }
 
 function deleteToken() {

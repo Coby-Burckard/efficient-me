@@ -156,6 +156,14 @@ h1 {
   max-height: 0px;
 }
 
+.goal-form input {
+  display: block;
+}
+
+.goal-form label {
+  display: inline-block;
+}
+
 /* universal features */
 
 .hidden {

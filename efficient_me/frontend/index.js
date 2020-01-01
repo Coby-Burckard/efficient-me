@@ -164,9 +164,18 @@ function buildGoalForm(activityID){
   /*
     constructs and hides a new goal form
   */
+
+  //constructing the form
   const formContainer = document.createElement('div')
   formContainer.classList.add('goal-form', 'ta-goal-container')
-  formContainer.innerHTML = `<label for="goal-title-input-${activityID}">Title</label><input type="text" id="goal-title-input-${activityID}"><label for="goal-description-input-${activityID}">Description</label><input type="text" id="goal-description-input-${activityID}"><label for="goal-hours-input-${activityID}">Hours required</label><input type="text" id="goal-hours-input-${activityID}"><label for="goal-deadline-input-${activityID}">Deadline</label><input type="date" id="goal-deadline-input-${activityID}">`
+  const goalForm = document.createElement('form')
+  goalForm.id = activityID
+  goalForm.innerHTML = `<form><label for="goal-title-input-${activityID}">Title</label><input type="text" id="goal-title-input-${activityID}"><label for="goal-description-input-${activityID}">Description</label><input type="text" id="goal-description-input-${activityID}"><label for="goal-hours-input-${activityID}">Hours required</label><input type="text" id="goal-hours-input-${activityID}"><label for="goal-deadline-input-${activityID}">Deadline</label><input type="date" id="goal-deadline-input-${activityID}"><button type="submit" >Add</button></form>`
+  formContainer.appendChild(goalForm)
+  
+  // adding submit form event listener
+  goalForm.addEventListener('submit', newGoalSubmit)
+
   return formContainer
 }
 
@@ -178,6 +187,10 @@ function buildTAs(TAs, goalID){
   const TAlistOverall = document.createElement('div')
   TAlistOverall.id = `${goalID}-TA-box`
   TAlistOverall.classList.add('TA-list-box')
+
+  // obtaining and appending a TA form
+  const TAform = buildTAform(goalID)
+  TAlistOverall.appendChild(TAform)
 
   TAs.forEach(time => {
 
@@ -212,19 +225,27 @@ function buildTAs(TAs, goalID){
 }
 
 
-buildTAform(goalID){
+function buildTAform(goalID) {
   /*
     constructs a time allocation form to be added to each goal
       the goal's id is passed in to be used in the input IDs.
   */
 
+  //constructing the new form
+  const taBorder = document.createElement('div')
+  taBorder.classList.add('TAelement TA-form')
+  const taForm = document.createElement('form')
+  taForm.innerHTML = `<h4>Log time</h4><label for="ta-title-input-${goalID}">Title</label><input type="text" id="ta-title-input-${goalID}"><label for="ta-description-input-${goalID}">Description</label><input type="text" id="ta-description-input-${goalID}"><label for="ta-hours-input-${goalID}">Time speant</label><input type="text" id="ta-hours-input-${goalID}"><label for="ta-deadline-input-${goalID}">Date</label><input type="date" id="ta-deadline-input-${goalID}"><button type="submit">Add</button>`
+  taBorder.appendChild(taForm)
+
+  //adding event listener to catch the submit
+  taForm.id = goalID
+  taForm.addEventListener('submit', newTASubmit)
+  
+
+  return taBorder
 }
 
-
-
-/*
-  New section of JS - interacting with the DB
-*/
 
 async function addNewActivity(defaultTab){
   /*
@@ -241,11 +262,30 @@ async function addNewActivity(defaultTab){
 }
 
 
+
+
+/*
+  New section of JS - interacting with the DB
+*/
+
+async function newGoalSubmit(event){
+  event.preventDefault()
+  console.log(event)
+}
+
+async function newTASubmit(event){
+  event.preventDefault()
+  console.log(event)
+}
+
+
+
+
 function newActivitySubmit(event){
   /*
     on submission of a new activity tab.  The tab is created, selected, and stored in the db
 
-    *** still needs invalid submission handeling
+    *** to do - submission errors, better new event handeling (highlight first tab?)
   */
   console.log('submitting')
   event.preventDefault()
@@ -255,14 +295,6 @@ function newActivitySubmit(event){
     closeTab(submittedTab.parentNode)
   }
   else {
-    const newTab = document.createElement('div')
-    // console.log(newTab)
-    // const defaultTab = document.getElementById('default')
-    // newTab.innerText = activityName
-    // newTab.classList.add('tab-button')
-    // highlightNewTab(newTab)
-    // closeTab(submittedTab.parentNode)
-    // defaultTab.insertAdjacentElement('afterend', newTab)
     updateDBActivities(activityName)
   }
 

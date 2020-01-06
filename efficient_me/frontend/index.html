@@ -108,6 +108,32 @@
       <div class="user-content">
         <div class="create-user-content">
           <!-- work from here -->
+          <div class="delete-popup ta-goal-container hidden" id="delete-popup">
+            <form id="delete-popup-form">
+              <div>
+                <label for="yes">Yes</label>
+                <input
+                  type="radio"
+                  class="radio"
+                  value="yes"
+                  id="yes"
+                  name="delete"
+                />
+              </div>
+              <div>
+                <label for="no">No</label>
+                <input
+                  type="radio"
+                  class="radio"
+                  value="no"
+                  id="no"
+                  name="delete"
+                  checked
+                />
+              </div>
+              <button type="submit" class="submit-button">Submit</button>
+            </form>
+          </div>
         </div>
       </div>
     </section>

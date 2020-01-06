@@ -9,19 +9,6 @@ class ActivityTypeSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'description', 'created']
 
 
-class ActivitySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Activity
-        fields = ['id', 'created', 'title', 'description', 'activity_type']
-
-
-class GoalSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Goal
-        fields = ['id', 'created', 'title', 'description',
-                  'hours_required', 'priority', 'deadline', 'activity']
-
-
 class TimeAllocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeAllocation
@@ -59,3 +46,21 @@ class NestedActivitySerializer(serializers.ModelSerializer):
         model = Activity
         fields = ['id', 'created', 'title',
                   'description', 'activity_type', 'goal_set']
+
+
+class ActivitySerializer(serializers.ModelSerializer):
+    goal_set = NestedGoalSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Activity
+        fields = ['id', 'created', 'title',
+                  'description', 'activity_type', 'goal_set']
+
+
+class GoalSerializer(serializers.ModelSerializer):
+    timeallocation_set = TimeAllocationSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Goal
+        fields = ['id', 'created', 'title', 'description',
+                  'hours_required', 'priority', 'deadline', 'activity', 'timeallocation_set']

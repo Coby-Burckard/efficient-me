@@ -1,3 +1,7 @@
+// requirements
+var Chart = require('chart.js')
+
+
 //home page functions
 function updatePageHome(){
   //updates index.html to the home page
@@ -73,38 +77,68 @@ function buildTabs(userData){
   if (userData != null) {
     //constructing each overarching tab
     userData.forEach(activity => {
-      const tabDiv = document.createElement('div')
-      tabDiv.classList.add('tab-button')
-      tabDiv.innerText = activity.title
-      tabDiv.id = activity.id
-      tabBody.appendChild(tabDiv)
-
-      // constructing the goal cards and new goal form
-      const goalBody = document.createElement('div')
-      goalBody.classList.add('hidden')
-      goalBody.classList.add('goal-body')
-      goalBody.id = `goal-body-for-${activity.id}`
+      const newTab = buildTab(activity)
       
-      // building and appending a goal form
-      const goalForm = buildGoalForm(activity.id)
-      goalBody.appendChild(goalForm)
-
-      // const goalForm = buildGoalForm(activity)
-      const goals = activity.goal_set
-      if (goals.length > 0) {
-        goals.forEach(goal => {
-          const goalCard = buildGoal(goal)
-          goalBody.appendChild(goalCard)          
-        })
-      }
-      
-      // building the tab data
-      const userBody = document.querySelector('.create-user-content')
-      userBody.appendChild(goalBody)
+      // appending the tab after the default tab
+      const defaultTab = document.getElementById('default')
+      defaultTab.insertAdjacentElement('afterend', newTab)
     });
   }
-
+  
   tabBody.classList.remove('hidden')
+}
+
+function buildTab(activity) {
+  const tabDiv = document.createElement('div')
+  tabDiv.classList.add('tab-button')
+  tabDiv.innerText = activity.title
+  tabDiv.id = activity.id
+  
+  // constructing the goal cards and new goal form
+  const goalBody = document.createElement('div')
+  goalBody.classList.add('hidden')
+  goalBody.classList.add('goal-body')
+  goalBody.id = `goal-body-for-${activity.id}`
+  
+  // adding goal user interaction functionality (delete, add) buttons
+  const deleteTabButton = document.createElement('a')
+  const addGoalButton = document.createElement('a')
+  deleteTabButton.classList.add('button', 'delete-tab-button')
+  addGoalButton.classList.add('button', 'addGoalButton')
+  deleteTabButton.id = `delete-activity-${activity.id}`
+  deleteTabButton.addEventListener('click', handleDeleteRequest)
+  addGoalButton.innerText = 'add new goal'
+  deleteTabButton.innerText = 'delete'
+  goalBody.appendChild(addGoalButton)
+  goalBody.appendChild(deleteTabButton)
+  
+  // building and appending a goal form
+  const goalForm = buildGoalForm(activity.id)
+  goalForm.classList.add('hidden')
+  goalBody.appendChild(goalForm)
+  
+  // unhide goal form event listener
+  addGoalButton.addEventListener('click', event => {
+    goalForm.classList.remove('hidden')
+  })
+  
+  // const goalForm = buildGoalForm(activity)
+  const goals = activity.goal_set
+  if (goals.length > 0) {
+    goals.forEach(goal => {
+      const goalCard = buildGoal(goal)
+      goalBody.appendChild(goalCard)          
+    })
+  }
+
+  // building the chart
+  const chart = buildChart(activity)
+  
+  // building the tab data
+  const userBody = document.querySelector('.create-user-content')
+  userBody.appendChild(goalBody)
+
+  return tabDiv
 }
 
 
@@ -122,7 +156,9 @@ function buildGoal(goal){
   const hours = document.createElement('div')
   const expandButton = document.createElement('a')
   const collapseButton = document.createElement('a')
+  const deleteButton = document.createElement('a')
   goalContainer.appendChild(title)
+  goalContainer.appendChild(deleteButton)
   goalContainer.appendChild(hours)
   goalContainer.appendChild(description)
   goalContainer.appendChild(deadline)
@@ -132,14 +168,19 @@ function buildGoal(goal){
 
   //adding style classes
   goalContainer.classList.add('card')
+  goalContainer.id = `goal-${goal.id}`
   title.classList.add('goal-title')
   hours.classList.add('goal-hours')
   deadline.classList.add('goal-deadline')
   description.classList.add('goal-description')
-  expandButton.classList.add('goal-expand-button')
-  collapseButton.classList.add('goal-collapse-button')
+  expandButton.classList.add('goal-expand-button', 'button')
+  collapseButton.classList.add('goal-collapse-button', 'button')
+  deleteButton.classList.add('goal-delete-button', 'button')
   collapseButton.classList.add('hidden')
   TAandGoalContainer.classList.add('ta-goal-container')
+
+  //adding event listeners
+  deleteButton.addEventListener('click', handleDeleteRequest)
 
   //adding goal details to respective elements
   title.innerText = goal.title
@@ -151,9 +192,12 @@ function buildGoal(goal){
   expandButton.innerText = '<+>'
   collapseButton.innerText = '<->'
   collapseButton.setAttribute('href', '#/')
+  deleteButton.innerText = 'delete'
+  deleteButton.setAttribute('href', '#/')
+  deleteButton.id = `delete-goal-${goal.id}`
 
   //builds paginated time allocations with a new form at top
-  const TAlist = buildTAs(goal.timeallocation_set, goal.id)
+  const TAlist = buildTAList(goal.timeallocation_set, goal.id)
   TAandGoalContainer.appendChild(TAlist)
   
   return TAandGoalContainer
@@ -167,6 +211,7 @@ function buildGoalForm(activityID){
 
   //constructing the form
   const formContainer = document.createElement('div')
+  formContainer.id = `goal-form-container-${activityID}`
   formContainer.classList.add('goal-form', 'ta-goal-container')
   const goalForm = document.createElement('form')
   goalForm.id = activityID
@@ -180,7 +225,7 @@ function buildGoalForm(activityID){
 }
 
 
-function buildTAs(TAs, goalID){
+function buildTAList(TAs, goalID){
   /*
   takes a JSON list of time allocations and builds and returns a structured list 
   */
@@ -194,34 +239,52 @@ function buildTAs(TAs, goalID){
 
   TAs.forEach(time => {
 
-    // creating the overall elements
-    const TAelement = document.createElement('div')
-    const title = document.createElement('h4')
-    const description = document.createElement('p')
-    const dateComplete = document.createElement('time')
-    const hours = document.createElement('div')
-
-    // adding specific details
-    TAelement.classList.add('TAelement')
-    title.classList.add('TAtitle')
-    description.classList.add('TAdescription')
-    dateComplete.classList.add('dateComplete')
-    hours.classList.add('TAhours')
-    title.innerText = time.title
-    description.innerText = time.description
-    dateComplete.setAttribute('datetime', time.date_complete)
-    dateComplete.innerText = time.date_complete
-    hours.innerHTML = time.time_speant
-
-    //constructing the element
-    TAelement.appendChild(title)
-    TAelement.appendChild(description)
-    TAelement.appendChild(dateComplete)
-    TAelement.appendChild(hours)
+    const TAelement = buildTA(time)
     TAlistOverall.appendChild(TAelement)
   })
 
   return TAlistOverall
+}
+
+
+function buildTA(time) {
+  // constructs a signle time allocation
+
+  // creating the overall elements
+  const TAelement = document.createElement('div')
+  const title = document.createElement('h4')
+  const description = document.createElement('p')
+  const dateComplete = document.createElement('time')
+  const hours = document.createElement('div')
+  const TADeleteButton = document.createElement('a')
+
+  // adding specific details
+  TAelement.classList.add('TAelement')
+  TAelement.id = `ta-${time.id}`
+  title.classList.add('TAtitle')
+  description.classList.add('TAdescription')
+  dateComplete.classList.add('dateComplete')
+  hours.classList.add('TAhours')
+  title.innerText = time.title
+  description.innerText = time.description
+  dateComplete.setAttribute('datetime', time.date_completed)
+  dateComplete.innerText = time.date_completed
+  hours.innerHTML = time.time_speant
+  TADeleteButton.innerText= 'delete'  
+  TADeleteButton.setAttribute('href', '#/')
+  TADeleteButton.id = `delete-ta-${time.id}`
+
+  //adding event listeners
+  TADeleteButton.addEventListener('click', handleDeleteRequest)
+
+  //constructing the element
+  TAelement.appendChild(title)
+  TAelement.appendChild(TADeleteButton)
+  TAelement.appendChild(description)
+  TAelement.appendChild(dateComplete)
+  TAelement.appendChild(hours)
+
+  return TAelement
 }
 
 
@@ -233,13 +296,13 @@ function buildTAform(goalID) {
 
   //constructing the new form
   const taBorder = document.createElement('div')
-  taBorder.classList.add('TAelement TA-form')
+  taBorder.classList.add('TAelement','TA-form')
   const taForm = document.createElement('form')
   taForm.innerHTML = `<h4>Log time</h4><label for="ta-title-input-${goalID}">Title</label><input type="text" id="ta-title-input-${goalID}"><label for="ta-description-input-${goalID}">Description</label><input type="text" id="ta-description-input-${goalID}"><label for="ta-hours-input-${goalID}">Time speant</label><input type="text" id="ta-hours-input-${goalID}"><label for="ta-deadline-input-${goalID}">Date</label><input type="date" id="ta-deadline-input-${goalID}"><button type="submit">Add</button>`
   taBorder.appendChild(taForm)
 
   //adding event listener to catch the submit
-  taForm.id = goalID
+  taForm.id = `ta-form-${goalID}`
   taForm.addEventListener('submit', newTASubmit)
   
 
@@ -252,6 +315,7 @@ async function addNewActivity(defaultTab){
     adds a form in a tab adjacent to the add button and the apropriate event listeners to submit or close it
   */
   const formTab = document.createElement('div')
+  formTab.id = 'form-tab'
   const innerHtml = '<form class="new-activity-form"><input type="text" name="new-activity"></form><span class="close-new-tab">x</span>'
   formTab.classList.add('tab-button')
   formTab.innerHTML = innerHtml
@@ -262,23 +326,108 @@ async function addNewActivity(defaultTab){
 }
 
 
+function buildChart(activity){
+  /*
+    constructs a cumuluative sum chart from the overall activity data, where goals are grouped by color
+  */
+}
+
+
 
 
 /*
-  New section of JS - interacting with the DB
+  Section of JS - interacting with the DB
 */
 
 async function newGoalSubmit(event){
+  /*
+    On submit of a goal form.  Sends an update post request to the API
+  */
   event.preventDefault()
-  console.log(event)
+
+  const token = document.cookie.split(';').filter((item) => item.trim().startsWith('token='))[0].split('=')[1]
+
+  //collecting form information
+  console.log(event.target)
+  const activityID = event.target.id
+  const title = event.target.querySelector(`#goal-title-input-${activityID}`).value
+  const description = event.target.querySelector(`#goal-description-input-${activityID}`).value
+  const hours = event.target.querySelector(`#goal-hours-input-${activityID}`).value
+  const dateTime = event.target.querySelector(`#goal-deadline-input-${activityID}`).value
+  console.log(activityID, title, description, hours, dateTime)
+
+  //sending requests
+  const response = await fetch('http://127.0.0.1:8000/api/goals/', {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Token ${token}`
+    },
+    body: JSON.stringify({
+      title: `${title}`,
+      description: `${description}`,
+      activity: `${activityID}`,
+      deadline: `${dateTime}`,
+      hours_required: `${hours}`
+  })})
+  if (response.status != 201){
+    console.log('screwed up adding a goal to the db status = ' + response.status)
+  }
+  else {
+
+    // creating a new goal card
+    const newGoal = await response.json()
+    const newGoalCard = buildGoal(newGoal)
+
+    // appending after the goal form
+    const goalForm = document.getElementById(`goal-form-container-${activityID}`)
+    goalForm.insertAdjacentElement('afterend',newGoalCard)
+    console.log('updated db')
+  }
 }
 
 async function newTASubmit(event){
   event.preventDefault()
-  console.log(event)
+  const token = document.cookie.split(';').filter((item) => item.trim().startsWith('token='))[0].split('=')[1]
+
+  //collecting form information
+  console.log(event.target)
+  const goalID = event.target.id.split('-')[2]
+  const title = event.target.querySelector(`#ta-title-input-${goalID}`).value
+  const description = event.target.querySelector(`#ta-description-input-${goalID}`).value
+  const hours = event.target.querySelector(`#ta-hours-input-${goalID}`).value
+  const dateTime = event.target.querySelector(`#ta-deadline-input-${goalID}`).value
+  console.log(goalID, title, description, hours, dateTime)
+
+  //sending requests
+  const response = await fetch('http://127.0.0.1:8000/api/timeallocations/', {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Token ${token}`
+    },
+    body: JSON.stringify({
+      title: `${title}`,
+      description: `${description}`,
+      goal: `${goalID}`,
+      date_completed: `${dateTime}`,
+      time_speant: `${hours}`
+  })})
+  if (response.status != 201){
+    console.log('screwed up adding a time allocation to the db status = ' + response.status)
+  }
+  else {
+    // creating new time log
+    const newTA = await response.json()
+    const newTAElem = buildTA(newTA)
+
+    // finding location to append new time log
+    const taForm = document.getElementById(`${goalID}-TA-box`).querySelector('.TA-form')
+    taForm.insertAdjacentElement('afterend', newTAElem)
+
+    console.log('updated db')
+  }
 }
-
-
 
 
 function newActivitySubmit(event){
@@ -480,10 +629,104 @@ async function updateDBActivities(activityName){
     console.log('screwed up adding an activity to the db status = ' + response.status)
   }
   else {
-    setHTMLOnPageLoad()
+    //obtaining a new tab element
+    const newActivity = await response.json()
+    const newTab = buildTab(newActivity)
+
+    // appending to the tab body
+    const defaultTab = document.getElementById('default')
+    defaultTab.insertAdjacentElement('afterend', newTab)
+
+    // highlighting the new tab
+    const formTab = document.getElementById('form-tab')
+    formTab.classList.add('hidden')
+    formTab.value = ""
+    highlightNewTab(newTab)
+
   }
   
 }
+
+
+function handleDeleteRequest(event) {
+  /*
+    prompts the user to ensure that they wish to delete the element passed in
+  */
+
+  // find the target based on the click event
+  const target = event.target.id.split('-')
+
+  //unhide delete pop up
+  const popup = document.getElementById('delete-popup')
+  popup.classList.remove('hidden')
+  
+  //set event listener with existing target passed in
+  const deleteChoiceForm = document.getElementById('delete-popup-form')
+  deleteChoiceForm.addEventListener('submit', handleDeletePopupSubmission(target))
+
+}
+
+
+function handleDeletePopupSubmission(target) {
+  return async function removeMe(event) {
+    /*
+    removes the target goal/TA/activity if the user submits "yes". Else, hides the form
+    */
+   
+   event.preventDefault()
+   const token = document.cookie.split(';').filter((item) => item.trim().startsWith('token='))[0].split('=')[1]
+
+    // remove the delete event listener
+    this.removeEventListener('submit', removeMe)
+
+    //obtaining the value submitted by the user
+    const value = event.target.elements.delete.value
+
+    if (value == "yes"){
+      // if yes, call the apropriate delete db function, hide the element. If no, hide popup
+      let targetType = target[1]
+      const targetID = target[2]
+
+      // correcting target type to correspond to API url and hiding apropriate element
+      switch(targetType){
+        case "activity":
+          targetType = "activities"
+          const deletedActivity = document.getElementById(`${targetID}`)
+          deletedActivity.classList.add('hidden')
+          break
+        case "goal":
+          targetType = "goals"
+          const deletedGoal = document.getElementById(`goal-${targetID}`)
+          deletedGoal.classList.add('hidden')
+          break
+        case "ta":
+          targetType = "timeallocations"
+          const deletedTA = document.getElementById(`ta-${targetID}`)
+          deletedTA.classList.add('hidden')
+          break
+      }
+
+      // sending the request to the API
+      const response = await fetch(`http://127.0.0.1:8000/api/${targetType}/${targetID}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Token ${token}`
+      }})
+      if (response.status != 204){
+        console.log('screwed up adding a goal to the db status = ' + response.status)
+      }
+      else {
+        console.log('updated db')
+      }
+    }
+
+    // hiding the popup
+    const popup = document.getElementById(`delete-popup`)
+    popup.classList.add('hidden')
+  }
+} 
+
 
 function deleteToken() {
   /*

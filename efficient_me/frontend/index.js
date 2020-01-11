@@ -1,6 +1,5 @@
-// requirements
-var Chart = require('chart.js')
-
+// dependencies
+const Chart = require('chart.js')
 
 //home page functions
 function updatePageHome(){
@@ -307,6 +306,38 @@ function buildTAform(goalID) {
   
 
   return taBorder
+}
+
+
+function handleUserBodyClick(event) {
+  /*
+    if else tree for clicks on the user body. Handels the following cases
+      1. expanding and collapsing user time allocations for a given goal
+  */
+  const clickedElement = event.target
+  
+  if (clickedElement.classList.contains('goal-expand-button')){
+    // expanding a goal to show its time allocations, hiding the expand button, unhiding the collapse button
+    const parentGoalContianer = clickedElement.closest('.ta-goal-container')
+    const timeAllocationList = parentGoalContianer.querySelector('.TA-list-box')
+    timeAllocationList.classList.add('expand')
+    clickedElement.classList.add('hidden')
+
+    //unhiding the collapse button
+    const collapseButton = parentGoalContianer.querySelector('.goal-collapse-button')
+    collapseButton.classList.remove('hidden')
+  }
+  else if (clickedElement.classList.contains('goal-collapse-button')){
+    // collapsing the time allocation list, showing the expand button, hiding the collapse button
+    const parentGoalContianer = clickedElement.closest('.ta-goal-container')
+    const timeAllocationList = parentGoalContianer.querySelector('.TA-list-box')
+    timeAllocationList.classList.remove('expand')
+    clickedElement.classList.add('hidden')
+
+    //hiding the collapse button
+    const expandButton = parentGoalContianer.querySelector('.goal-expand-button')
+    expandButton.classList.remove('hidden')
+  }
 }
 
 
@@ -696,7 +727,7 @@ function handleDeletePopupSubmission(target) {
           break
         case "goal":
           targetType = "goals"
-          const deletedGoal = document.getElementById(`goal-${targetID}`)
+          const deletedGoal = document.getElementById(`goal-${targetID}`).parentNode
           deletedGoal.classList.add('hidden')
           break
         case "ta":
@@ -776,33 +807,3 @@ window.onload = function () {
 
 
 // active working space
-function handleUserBodyClick(event) {
-  /*
-    if else tree for clicks on the user body. Handels the following cases
-      1. expanding and collapsing user time allocations for a given goal
-  */
-  const clickedElement = event.target
-  
-  if (clickedElement.classList.contains('goal-expand-button')){
-    // expanding a goal to show its time allocations, hiding the expand button, unhiding the collapse button
-    const parentGoalContianer = clickedElement.closest('.ta-goal-container')
-    const timeAllocationList = parentGoalContianer.querySelector('.TA-list-box')
-    timeAllocationList.classList.add('expand')
-    clickedElement.classList.add('hidden')
-
-    //unhiding the collapse button
-    const collapseButton = parentGoalContianer.querySelector('.goal-collapse-button')
-    collapseButton.classList.remove('hidden')
-  }
-  else if (clickedElement.classList.contains('goal-collapse-button')){
-    // collapsing the time allocation list, showing the expand button, hiding the collapse button
-    const parentGoalContianer = clickedElement.closest('.ta-goal-container')
-    const timeAllocationList = parentGoalContianer.querySelector('.TA-list-box')
-    timeAllocationList.classList.remove('expand')
-    clickedElement.classList.add('hidden')
-
-    //hiding the collapse button
-    const expandButton = parentGoalContianer.querySelector('.goal-expand-button')
-    expandButton.classList.remove('hidden')
-  }
-}

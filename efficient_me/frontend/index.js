@@ -176,10 +176,12 @@ function buildGoal(goal){
   collapseButton.classList.add('goal-collapse-button', 'button')
   deleteButton.classList.add('goal-delete-button', 'button')
   collapseButton.classList.add('hidden')
-  TAandGoalContainer.classList.add('ta-goal-container')
+  TAandGoalContainer.classList.add(`ta-goal-container`)
+  TAandGoalContainer.id = `container-${goal.id}`
 
   //adding event listeners
   deleteButton.addEventListener('click', handleDeleteRequest)
+  TAandGoalContainer.addEventListener('click', handleGoalClickGraphing)
 
   //adding goal details to respective elements
   title.innerText = goal.title
@@ -555,7 +557,7 @@ async function fetchUserData(token) {
   })
 
   const userDataJSON = await userData.json()
-
+  buildChartDatasets(userDataJSON) //adding chart data to local storage
   buildTabs(userDataJSON) //builds the user page with the retrieved JSON
 
   return 
@@ -807,3 +809,73 @@ window.onload = function () {
 
 
 // active working space
+
+function buildChartDatasets(userData) {
+  /* 
+    Takes in an activity or goal
+      - activity: builds dataset for cumulative sum graph for all time speant on all goals in an activity
+      - goal: builds dataset for cumulative sum graph for all time speant on a goal
+  */
+
+  // initializing dictionaries to be cached
+  let goalData = []
+  let activityData = []
+  let activityCumSum = 0
+  let goalCumSum = 0
+  
+  // looping through each activity
+  for (let i = 0; i < userData.length; i++){
+    const activity = userData[i]
+    const goalSet = activity.goal_set
+
+    //reseting 
+    activityCumSum = 0
+    activityData = []
+    
+    // looping through each goal to sum up time allocations and build goal
+    if (goalSet.length > 0){
+      for (let j = 0; j < goalSet.length; j++){
+        const goal = goalSet[j]
+        const taSet = goal.timeallocation_set
+        console.log(taSet)
+        //reseting goal
+        goalCumSum = 0
+        goalData = []
+
+        //looping through each time allocation to sum up time
+        if (taSet.length > 0){
+          for (let k = 0; k < taSet.length; k++){
+            const time = taSet[k]
+            activityCumSum += time.time_speant*1
+            goalCumSum += time.time_speant*1
+            
+            //adding x, y pair
+            const date = new Date(...time.date_completed.split('-'))
+            activityData.push({
+              x: date,
+              y: activityCumSum
+            })
+            goalData.push({
+              x: date,
+              y: goalCumSum
+            })
+          }
+        }
+
+        // appending to goal local storage dict
+        localStorage.setItem(`goal-${goal.id}-data`, JSON.stringify(goalData))
+      }
+    }
+
+    // appending to activity local storage dict
+    localStorage.setItem(`activity-${activity.id}-data`, JSON.stringify(activityData))
+  }
+}
+
+function handleGoalClickGraphing(event) {
+  /*
+    Displays the correct chart on click of a goal body
+  */
+  console.log(event)
+  
+}

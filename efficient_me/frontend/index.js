@@ -95,7 +95,6 @@ function buildTab(activity) {
   
   // constructing the goal cards and new goal form
   const goalBody = document.createElement('div')
-  goalBody.classList.add('hidden')
   goalBody.classList.add('goal-body')
   goalBody.id = `goal-body-for-${activity.id}`
   
@@ -129,14 +128,28 @@ function buildTab(activity) {
       goalBody.appendChild(goalCard)          
     })
   }
-
+  
   // building the chart
-  const chart = buildChart(activity)
+  const chartsContainer = document.createElement('div')
+  chartsContainer.classList.add('graph-body')
+  const chart = buildGraph(`activity-${activity.id}-data`)
+  chartsContainer.appendChild(chart)
   
   // building the tab data
   const userBody = document.querySelector('.create-user-content')
-  userBody.appendChild(goalBody)
-
+  const userTab = document.createElement('div')
+  userTab.classList.add('user-tab')
+  userTab.id = `user-tab-for-${activity.id}`
+  userTab.appendChild(goalBody)
+  userTab.append(chartsContainer)
+  
+  //allowing for hiding of tab data
+  const hideMe = document.createElement('div')
+  hideMe.id = `hide-div-${activity.id}`
+  hideMe.classList.add('hide-me', 'hidden')
+  hideMe.appendChild(userTab)
+  
+  userBody.appendChild(hideMe)
   return tabDiv
 }
 
@@ -359,14 +372,6 @@ async function addNewActivity(defaultTab){
 }
 
 
-function buildChart(activity){
-  /*
-    constructs a cumuluative sum chart from the overall activity data, where goals are grouped by color
-  */
-}
-
-
-
 
 /*
   Section of JS - interacting with the DB
@@ -498,12 +503,12 @@ function highlightNewTab(clickedTab) {
   clickedTab.classList.add('highlight-tab')
 
   //hiding all goal-bodies
-  goalBodies = document.querySelectorAll('.goal-body')
+  goalBodies = document.querySelectorAll('.hide-me')
   goalBodies.forEach(body => {body.classList.add('hidden')})
 
   //unhiding selected tab's goals
   const activityID = clickedTab.id
-  const clickedGoalBody = document.getElementById(`goal-body-for-${activityID}`)
+  const clickedGoalBody = document.getElementById(`hide-div-${activityID}`)
   clickedGoalBody.classList.remove('hidden')
 }
 
@@ -871,6 +876,50 @@ function buildChartDatasets(userData) {
     localStorage.setItem(`activity-${activity.id}-data`, JSON.stringify(activityData))
   }
 }
+
+
+function buildGraph(localAddress){
+  /*
+    takes in a local storage key and builds a cumulative sum chart.js element from the data
+  */
+
+  //obtaining the JSON in local storage
+  const data = JSON.parse(localStorage.getItem(localAddress))
+
+  //initializing graphing elements
+  const graphBox = document.createElement('div')
+  const graph = document.createElement('canvas')
+
+  //adding classes and ids
+  const adress = localAddress.split('-')
+  graph.id = `${adress[0]}-${adress[1]}-graph`
+  graphBox.classList.add('graph-container')
+  graphBox.appendChild(graph)
+
+  //creating the cumulative sum graph
+  const newGraph = new Chart(graph, {
+    type: 'line',
+    data: {
+      labels: ['shit'],
+      datasets: [{
+        data: data
+      }]
+    },
+    options: {
+      scales: {
+        yAxes: [{
+          ticks: {
+            beginAtZero: true
+          }
+        }]
+      }
+    }
+  })
+
+  //returning the new canvas element
+  return graphBox
+}
+
 
 function handleGoalClickGraphing(event) {
   /*

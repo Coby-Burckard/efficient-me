@@ -20968,7 +20968,11 @@ function buildTab(activity) {
 
   const goalBody = document.createElement('div');
   goalBody.classList.add('goal-body');
-  goalBody.id = `goal-body-for-${activity.id}`; // adding goal user interaction functionality (delete, add) buttons
+  goalBody.id = `goal-body-for-${activity.id}`; // constructing the graph body
+
+  const chartsContainer = document.createElement('div');
+  chartsContainer.classList.add('graph-body');
+  chartsContainer.id = `graph-body-${activity.id}`; // adding goal user interaction functionality (delete, add) buttons
 
   const deleteTabButton = document.createElement('a');
   const addGoalButton = document.createElement('a');
@@ -20994,13 +20998,15 @@ function buildTab(activity) {
   if (goals.length > 0) {
     goals.forEach(goal => {
       const goalCard = buildGoal(goal);
-      goalBody.appendChild(goalCard);
+      goalBody.appendChild(goalCard); // obtaining a goal-graph
+
+      const goalChart = buildGraph(`goal-${goal.id}-data`);
+      goalChart.classList.add('hidden');
+      chartsContainer.appendChild(goalChart);
     });
   } // building the chart
 
 
-  const chartsContainer = document.createElement('div');
-  chartsContainer.classList.add('graph-body');
   const chart = buildGraph(`activity-${activity.id}-data`);
   chartsContainer.appendChild(chart); // building the tab data
 
@@ -21243,7 +21249,12 @@ async function newGoalSubmit(event) {
   } else {
     // creating a new goal card
     const newGoal = await response.json();
-    const newGoalCard = buildGoal(newGoal); // appending after the goal form
+    const newGoalCard = buildGoal(newGoal); // creating a new goal graph
+
+    const chartsContainer = document.getElementById(`graph-body-${activityID}`);
+    const goalChart = buildGraph(`goal-${newGoal.id}-data`);
+    goalChart.classList.add('hidden');
+    chartsContainer.appendChild(goalChart); // appending after the goal form
 
     const goalForm = document.getElementById(`goal-form-container-${activityID}`);
     goalForm.insertAdjacentElement('afterend', newGoalCard);
@@ -21328,7 +21339,15 @@ function highlightNewTab(clickedTab) {
 
   const activityID = clickedTab.id;
   const clickedGoalBody = document.getElementById(`hide-div-${activityID}`);
-  clickedGoalBody.classList.remove('hidden');
+  clickedGoalBody.classList.remove('hidden'); //hiding all graphs
+
+  const graphBoxes = document.querySelectorAll('.graph-container');
+  graphBoxes.forEach(graphBox => {
+    graphBox.classList.add('hidden');
+  }); //unhiding activity graph
+
+  const activityGraph = document.getElementById(`activity-${activityID}-graphbox`);
+  activityGraph.classList.remove('hidden');
 }
 
 function manageTabClick(event) {
@@ -21531,6 +21550,8 @@ function handleDeletePopupSubmission(target) {
           targetType = "goals";
           const deletedGoal = document.getElementById(`goal-${targetID}`).parentNode;
           deletedGoal.classList.add('hidden');
+          const deletedGoalGraph = document.getElementById(`goal-${targetID}-graphbox`);
+          deletedGoalGraph.classList.add('hidden');
           break;
 
         case "ta":
@@ -21668,6 +21689,7 @@ function buildGraph(localAddress) {
   const adress = localAddress.split('-');
   graph.id = `${adress[0]}-${adress[1]}-graph`;
   graphBox.classList.add('graph-container');
+  graphBox.id = `${adress[0]}-${adress[1]}-graphbox`;
   graphBox.appendChild(graph); //creating the cumulative sum graph
 
   const newGraph = new Chart(graph, {
@@ -21696,7 +21718,18 @@ function handleGoalClickGraphing(event) {
   /*
     Displays the correct chart on click of a goal body
   */
-  console.log(event);
+  //finding goal id
+  const clickedElement = event.target;
+  const parentGoalContianer = clickedElement.closest('.ta-goal-container');
+  const goalID = parentGoalContianer.id.split('-')[1]; //hiding all graphs
+
+  const graphBoxes = document.querySelectorAll('.graph-container');
+  graphBoxes.forEach(graphBox => {
+    graphBox.classList.add('hidden');
+  }); //unhiding graph
+
+  const clickedGraphBox = document.getElementById(`goal-${goalID}-graphbox`);
+  clickedGraphBox.classList.remove('hidden');
 }
 },{"chart.js":"node_modules/chart.js/dist/Chart.js"}],"../../../../../AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
@@ -21726,7 +21759,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50662" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64470" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

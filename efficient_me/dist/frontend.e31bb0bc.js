@@ -20880,7 +20880,9 @@ return src;
 
 },{"moment":"node_modules/moment/moment.js"}],"index.js":[function(require,module,exports) {
 // dependencies
-const Chart = require('chart.js'); //home page functions
+const Chart = require('chart.js');
+
+const Moment = require('moment'); //home page functions
 
 
 function updatePageHome() {
@@ -21297,7 +21299,9 @@ async function newTASubmit(event) {
     const newTAElem = buildTA(newTA); // finding location to append new time log
 
     const taForm = document.getElementById(`${goalID}-TA-box`).querySelector('.TA-form');
-    taForm.insertAdjacentElement('afterend', newTAElem);
+    taForm.insertAdjacentElement('afterend', newTAElem); //updating local storage and graph
+
+    updateStorageAndGraph(`goal-${goalID}-data`, token);
     console.log('updated db');
   }
 }
@@ -21496,6 +21500,7 @@ async function updateDBActivities(activityName) {
   } else {
     //obtaining a new tab element
     const newActivity = await response.json();
+    buildChartDatasets(newActivity);
     const newTab = buildTab(newActivity); // appending to the tab body
 
     const defaultTab = document.getElementById('default');
@@ -21544,6 +21549,8 @@ function handleDeletePopupSubmission(target) {
           targetType = "activities";
           const deletedActivity = document.getElementById(`${targetID}`);
           deletedActivity.classList.add('hidden');
+          const deletedActivityBody = document.getElementById(`hide-div-${targetID}`);
+          deletedActivityBody.classList.add('hidden');
           break;
 
         case "goal":
@@ -21559,7 +21566,7 @@ function handleDeletePopupSubmission(target) {
           const deletedTA = document.getElementById(`ta-${targetID}`);
           deletedTA.classList.add('hidden');
           break;
-      } // sending the request to the API
+      } // sending the DELETE request to the API
 
 
       const response = await fetch(`http://127.0.0.1:8000/api/${targetType}/${targetID}`, {
@@ -21573,7 +21580,30 @@ function handleDeletePopupSubmission(target) {
       if (response.status != 204) {
         console.log('screwed up adding a goal to the db status = ' + response.status);
       } else {
-        console.log('updated db');
+        console.log('updated db'); // updating the correct graph
+
+        switch (targetType) {
+          case "goals":
+            //updating local storage
+            buildChartDatasets().then(value => {
+              // update activity graph and display activity graph
+              const deletedGoal = document.getElementById(`goal-${targetID}`).parentNode;
+              let activityID = deletedGoal.closest('.goal-body').id.split('-')[3];
+              console.log(`updating graph: activity-${activityID}-data`);
+              updateStorageAndGraph(`activity-${activityID}-data`, token);
+            });
+            break;
+
+          case "timeallocations":
+            //updating local storage
+            buildChartDatasets().then(value => {
+              // update goal graph
+              const deletedTA = document.getElementById(`ta-${targetID}`);
+              const goalID = deletedTA.closest('.ta-goal-container').id.split('-')[1];
+              updateStorageAndGraph(`goal-${goalID}-data`, token);
+            });
+            break;
+        }
       }
     } // hiding the popup
 
@@ -21620,15 +21650,27 @@ window.onload = function () {
 }; // active working space
 
 
-function buildChartDatasets(userData) {
+async function buildChartDatasets(userData) {
   /* 
     Takes in an activity or goal
       - activity: builds dataset for cumulative sum graph for all time speant on all goals in an activity
       - goal: builds dataset for cumulative sum graph for all time speant on a goal
   */
-  // initializing dictionaries to be cached
+  // obtaining user info
+  const token = document.cookie.split(';').filter(item => item.trim().startsWith('token='))[0].split('=')[1];
+  const response = await fetch(`http://127.0.0.1:8000/api/userPage/`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Token ${token}`
+    }
+  });
+  userData = await response.json(); // initializing dictionaries to be cached
+
   let goalData = [];
+  let goalDates = [];
   let activityData = [];
+  let activityDates = [];
   let activityCumSum = 0;
   let goalCumSum = 0; // looping through each activity
 
@@ -21642,8 +21684,7 @@ function buildChartDatasets(userData) {
     if (goalSet.length > 0) {
       for (let j = 0; j < goalSet.length; j++) {
         const goal = goalSet[j];
-        const taSet = goal.timeallocation_set;
-        console.log(taSet); //reseting goal
+        const taSet = goal.timeallocation_set; //reseting goal
 
         goalCumSum = 0;
         goalData = []; //looping through each time allocation to sum up time
@@ -21654,24 +21695,34 @@ function buildChartDatasets(userData) {
             activityCumSum += time.time_speant * 1;
             goalCumSum += time.time_speant * 1; //adding x, y pair
 
-            const date = new Date(...time.date_completed.split('-'));
+            const date = time.date_completed;
+            activityDates.push(date);
             activityData.push({
-              x: date,
               y: activityCumSum
             });
+            goalDates.push(date);
             goalData.push({
-              x: date,
               y: goalCumSum
             });
           }
         } // appending to goal local storage dict
 
 
+        const sortedGoalDates = goalDates.sort((a, b) => Date.parse(a) - Date.parse(b));
+        goalData.forEach(point => {
+          point.x = sortedGoalDates[0];
+          sortedGoalDates.shift();
+        });
         localStorage.setItem(`goal-${goal.id}-data`, JSON.stringify(goalData));
       }
     } // appending to activity local storage dict
 
 
+    const sortedActivityDates = activityDates.sort((a, b) => Date.parse(a) - Date.parse(b));
+    activityData.forEach(point => {
+      point.x = sortedActivityDates[0];
+      sortedActivityDates.shift();
+    });
     localStorage.setItem(`activity-${activity.id}-data`, JSON.stringify(activityData));
   }
 }
@@ -21681,10 +21732,19 @@ function buildGraph(localAddress) {
     takes in a local storage key and builds a cumulative sum chart.js element from the data
   */
   //obtaining the JSON in local storage
-  const data = JSON.parse(localStorage.getItem(localAddress)); //initializing graphing elements
+  const data = JSON.parse(localStorage.getItem(localAddress)); //converting string date to Date object
+
+  if (data != null) {
+    data.forEach(point => {
+      point.x = new Date(Date.parse(point.x));
+      point.x = new Date(point.x.getTime() + Math.abs(point.x.getTimezoneOffset() * 60000));
+    });
+  } //initializing graphing elements
+
 
   const graphBox = document.createElement('div');
-  const graph = document.createElement('canvas'); //adding classes and ids
+  const graph = document.createElement('canvas');
+  const ctx = graph.getContext('2d'); //adding classes and ids
 
   const adress = localAddress.split('-');
   graph.id = `${adress[0]}-${adress[1]}-graph`;
@@ -21701,10 +21761,15 @@ function buildGraph(localAddress) {
       }]
     },
     options: {
+      title: {
+        text: 'Chart.js Time Scale'
+      },
       scales: {
-        yAxes: [{
+        xAxes: [{
+          type: 'time',
+          bounds: 'data',
           ticks: {
-            beginAtZero: true
+            min: data != null && data.length > 0 ? data[0].x : 0
           }
         }]
       }
@@ -21731,7 +21796,65 @@ function handleGoalClickGraphing(event) {
   const clickedGraphBox = document.getElementById(`goal-${goalID}-graphbox`);
   clickedGraphBox.classList.remove('hidden');
 }
-},{"chart.js":"node_modules/chart.js/dist/Chart.js"}],"../../../../../AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+
+async function updateStorageAndGraph(storageKey, token) {
+  //initializing variables
+  let targetType = storageKey.split('-')[0];
+  let targetID = storageKey.split('-')[1];
+  const graphBox = document.getElementById(`${targetType}-${targetID}-graphbox`);
+  const graphBody = graphBox.parentNode; //obtaining activity info
+
+  const activityID = graphBody.id.split('-')[2];
+  const activityGraphBox = graphBody.querySelector(`#activity-${activityID}-graphbox`);
+  console.log(`updating graph of ${targetType}-${targetID}`);
+
+  switch (targetType) {
+    case "activity":
+      targetType = "activities";
+      break;
+
+    case "goal":
+      targetType = "goals";
+      break;
+
+    case "ta":
+      targetType = "timeallocations";
+      break;
+  } //fetching data
+
+
+  const response = await fetch(`http://127.0.0.1:8000/api/userPage/`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Token ${token}`
+    }
+  });
+
+  if (response.status == 200) {
+    const responseJSON = response.json();
+    responseJSON.then(responseJSON => {
+      // updating local storage
+      console.log(responseJSON);
+      buildChartDatasets(responseJSON).then(value => {
+        // deleting existing graph
+        graphBody.removeChild(graphBox); // updating goal graph
+
+        const newGraphBox = buildGraph(storageKey);
+        console.log(newGraphBox);
+        graphBody.appendChild(newGraphBox); //updating activity graph
+
+        const newActivityGraphBox = buildGraph(`activity-${activityID}-data`);
+        newActivityGraphBox.classList.add('hidden');
+        graphBody.removeChild(activityGraphBox);
+        graphBody.appendChild(newActivityGraphBox);
+      });
+    });
+  } else {
+    console.log('could not GET parent resource after deletion');
+  }
+}
+},{"chart.js":"node_modules/chart.js/dist/Chart.js","moment":"node_modules/moment/moment.js"}],"../../../../../AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -21759,7 +21882,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64470" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55842" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

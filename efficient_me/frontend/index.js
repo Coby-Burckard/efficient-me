@@ -787,7 +787,7 @@ function handleDeletePopupSubmission(target) {
         "Authorization": `Token ${token}`
       }})
       if (response.status != 204){
-        console.log('screwed up adding a goal to the db status = ' + response.status)
+        console.log('screwed up deleting an activity = ' + response.status)
       }
       else {
         console.log('updated db')

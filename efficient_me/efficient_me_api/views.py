@@ -115,15 +115,23 @@ class CUser(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
 
 
-class fullUserPage(APIView):
+class fullUserPage(generics.ListAPIView):
     """
         Responds with the owner's full user page if they are authenticated
     """
 
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrBackOff]
+    serializer_class = NestedActivitySerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, format=None):
-        activities = Activity.objects.all()
-        serializer = NestedActivitySerializer(
-            activities, many=True, read_only=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        user = self.request.user
+        return Activity.objects.filter(user=user)
+
+
+    # permission_classes = (permissions.IsAuthenticated, IsOwnerOrBackOff)
+
+    # def get(self, format=None):
+    #     activities = Activity.objects.filter(user=self.request.user)
+    #     serializer = NestedActivitySerializer(
+    #         activities, many=True, read_only=True)
+    #     return Response(serializer.data)

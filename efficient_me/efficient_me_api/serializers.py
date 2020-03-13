@@ -45,7 +45,7 @@ class NestedActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Activity
         fields = ['id', 'created', 'title',
-                  'description', 'activity_type', 'goal_set']
+                  'description', 'activity_type', 'goal_set', 'user']
 
 
 class ActivitySerializer(serializers.ModelSerializer):

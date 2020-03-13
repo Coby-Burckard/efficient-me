@@ -6,4 +6,5 @@ class IsOwnerOrBackOff(permissions.BasePermission):
     '''
 
     def has_object_permission(self, request, view, obj):
+        print('checking permissions ', request.user, obj.user)
         return obj.user == request.user
